@@ -2,19 +2,23 @@ let express = require('express');
 const router = express.Router();
 const Client = require("../models/ClientSchema");
 
-router.get("/", async (req, res) => {
+router.get("/:agencyid", async (req, res) => {
     try {
-        let result = await Client.find({});
+        let result = await Client.find({ agencyid: req.params.agencyid })
+        .populate("stateid");
         res.json({ status: "success", data: result })
     } catch (err) {
         res.json({ status: "error", data: err});
     }
 });
 
-router.get("/:id", async (req, res) => {
+
+
+router.get("/:agencyid/:id", async (req, res) => {
     try {
         const id = req.params.id;
-        let object = await Client.findById(id);
+        let object = await Client.findById(id)
+        .populate("stateid").populate("agencyid");
         res.json({ status: "success", data: object });
     } catch (err) {
         res.json({ status: "error", data: err });
@@ -26,7 +30,7 @@ router.post("/", async (req, res) => {
         const data = req.body;
 
         let object = await Client.create(data);
-        res.json({ status: "Success", data: object });
+        res.json({ status: "success", data: object });
     } catch (err) {
         res.json({ status: "error", data: err });
     }

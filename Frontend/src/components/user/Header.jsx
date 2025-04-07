@@ -1,6 +1,19 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router';
 
 function Header() {
+
+  let user = JSON.parse(localStorage.getItem('user')) || null;
+  let agency = JSON.parse(localStorage.getItem('agency')) || null;
+
+  let navigate = useNavigate();
+
+  useEffect(() => {
+    if(user == null){
+      navigate('/');
+    }
+  }, []);
+
   return (
     <>
       <header id="header" className="header fixed-top d-flex align-items-center">
@@ -13,7 +26,7 @@ function Header() {
         </div>
 
         <div className="search-bar">
-          <h6>Welcome Abhijit</h6>
+          { user && agency ? <h6>Welcome { user.name + "(" + agency.name + ")" }</h6> : null }
         </div>
 
         <nav className="header-nav ms-auto">

@@ -1,13 +1,35 @@
-import React from 'react';
+import axios from 'axios';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 function Login() {
 
   let navigate = useNavigate();
 
+  let [data, setData] = useState({
+    email: "",
+    password: ""
+  })
+
+  function handleChange(e) {
+    e.preventDefault();
+    setData({ ...data, [e.target.id]: e.target.value });
+  }
+
   function login(e) {
     e.preventDefault();
-    navigate('/dashboard');
+    console.log(data);
+    axios.post("http://localhost:8081/authentication/login", data)
+      .then((res) => {
+        if (res.data.status == "success") {
+          localStorage.setItem("user", JSON.stringify(res.data.data));
+          localStorage.setItem("agency", JSON.stringify(res.data.agency));
+          navigate('/dashboard');
+        } else {
+          console.log(res.data.data);
+          alert(res.data.data);
+        }
+      });
   }
 
   return (
@@ -41,17 +63,17 @@ function Login() {
                           <label for="yourUsername" className="form-label">Username</label>
                           <div className="input-group has-validation">
                             <span className="input-group-text" id="inputGroupPrepend">@</span>
-                            <input type="text" name="username" className="form-control" id="yourUsername" required="" />
+                            <input type="text" id="email" onChange={(e) => handleChange(e)} className="form-control" required />
                             <div className="invalid-feedback">Please enter your username.</div>
                           </div>
                         </div>
 
                         <div className="col-12">
                           <label for="yourPassword" className="form-label">Password</label>
-                          <input type="password" name="password" className="form-control" id="yourPassword" required="" />
+                          <input type="password" id="password" onChange={(e) => handleChange(e)} className="form-control" required />
                           <div className="invalid-feedback">Please enter your password!</div>
                         </div>
-                        
+
                         <div className="col-12">
                           <button className="btn btn-primary w-100" onClick={(e) => { login(e); }} type="submit">Login</button>
                         </div>

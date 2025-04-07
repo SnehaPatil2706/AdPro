@@ -1,24 +1,20 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Button, Input, Select } from "antd";
 import { Table } from 'antd';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-
 function Clients() {
 
-  const [id, setId] = useState(undefined);
+  let agency = JSON.parse(localStorage.getItem('agency')) || null;
+
+  const [states, setStates] = useState([]);
   const navigate = useNavigate();
-  const [clientData, setClientData] = useState([]);
-
-  function handleAdd(e){
-    e.preventDefault();
-    navigate('/master/addclients');
-  }
-
-  const [info, setInfo] = useState({
-    agencyid: "",
+  const [result, setResult] = useState([]);
+  const [data, setData] = useState({
+    id:"",
+    agencyid: agency._id,
     name: "",
     contact: "",
     address: "",
@@ -26,137 +22,75 @@ function Clients() {
     gstno: "",
   });
 
-  
+
   function handleChange(e) {
-    setInfo({ ...data, [e.target.id]: e.target.value });
+    setData({ ...data, [e.target.id]: e.target.value });
   }
 
   function handleSave(e) {
     e.preventDefault();
-    if (id === undefined) {
+    console.log(data);
+    
+    if (data.id === "") {
       axios.post("http://localhost:8081/clients", data)
         .then((res) => {
-          console.log(res.data.data);
-          setInfo({
-            agencyid: "",
-            name: "",
-            contact: "",
-            address: "",
-            stateid: "",
-            gstno: "",
-          });
-
           loadData();
-          alert("Data Submitted Successfully !!!")
         })
     } else {
-      axios.put("http:///localhost:8081/clients/" + id, data)
+      axios.put("http:///localhost:8081/clients/" + data.id, data)
         .then((res) => {
-          console.log(res.data.data);
-
-          setInfo({
-            agencyid: "",
-            name: "",
-            contact: "",
-            address: "",
-            stateid: "",
-            gstno: "",
-          });
-
           loadData();
-          setId(undefined)
         })
     }
-
   }
 
   function loadData() {
-    axios.get("http://localhost:8081/clients")
-        .then((res) => {
-            console.log(res.data.data);
-            setClientData(res.data.data);
-        })
-}
+    setData({
+      id:"",
+      agencyid: agency._id,
+      name: "",
+      contact: "",
+      address: "",
+      stateid: "",
+      gstno: "",
+    });
+    axios.get("http://localhost:8081/states")
+      .then((res) => {
+        setStates(res.data.data.map((state) => ({
+          label: state.name,
+          value: state._id,
+        })));
+      });
+    axios.get("http://localhost:8081/clients/" + agency._id)
+      .then((res) => {
+        setResult(res.data.data);
+      });
+  }
 
-useEffect(() => {
+
+  useEffect(() => {
     loadData();
-}, []);
+  }, []);
 
   const columns = [
     {
       title: 'Name',
-      dataIndex: 'name',
-      filters: [
-        {
-          text: 'Joe',
-          value: 'Joe',
-        },
-        {
-          text: 'Category 1',
-          value: 'Category 1',
-        },
-        {
-          text: 'Category 2',
-          value: 'Category 2',
-        },
-      ],
-      filterMode: 'tree',
-      filterSearch: true,
-      onFilter: (value, record) => record.name.startsWith(value),
-      width: '30%',
-    },
-    {
-      title: 'Age',
-      dataIndex: 'age',
-      sorter: (a, b) => a.age - b.age,
+      dataIndex: 'name'
     },
     {
       title: 'Address',
-      dataIndex: 'address',
-      filters: [
-        {
-          text: 'London',
-          value: 'London',
-        },
-        {
-          text: 'New York',
-          value: 'New York',
-        },
-      ],
-      onFilter: (value, record) => record.address.startsWith(value),
-      filterSearch: true,
-      width: '40%',
+      dataIndex: 'address'
+    },
+    {
+      title: 'GST',
+      dataIndex: 'gstno',
+    },
+    {
+      title: 'Contact',
+      dataIndex: 'contact'
     },
   ];
-  const data = [
-    {
-      key: '',
-      name: '',
-      age: '',
-      address: '',
-    },
-    {
-      key: '2',
-      name: 'Jim Green',
-      age: 42,
-      address: 'London No. 1 Lake Park',
-    },
-    {
-      key: '3',
-      name: 'Joe Black',
-      age: 32,
-      address: 'Sydney No. 1 Lake Park',
-    },
-    {
-      key: '4',
-      name: 'Jim Red',
-      age: 32,
-      address: 'London No. 2 Lake Park',
-    },
-  ];
-  const onChange = (pagination, filters, sorter, extra) => {
-    console.log('params', pagination, filters, sorter, extra);
-  };
+
 
   return (
     <>
@@ -173,15 +107,57 @@ useEffect(() => {
           </nav>
         </div>
         <section className="section">
-          <div className="d-flex justify-content-end mb-3">
-            <Button onClick={handleAdd} type="primary">Add Client</Button>
+          <div className="row">
+            <div className="col-lg-12">
+              <div className="row">
+                <div className="col-lg-12">
+                  <div className="card p-3">
+                    <div className="row">
+                      <div className="col-lg-6 p-1">
+                        Name*
+                        <Input id="name" onChange={handleChange} value={data.name} placeholder="Name" />
+                      </div>
+                      <div className="col-lg-6 p-1">
+                        Contact*
+                        <Input id="contact" onChange={handleChange} value={data.contact} placeholder="Contact" />
+                      </div>
+                      <div className="col-lg-6 p-1">
+                        Address*
+                        <Input id="address" onChange={handleChange} value={data.address} placeholder="Address" />
+                      </div>
+                      <div className="col-lg-6 p-1">
+                          State*<br />
+                          <Select
+                            className="w-100"
+                            showSearch
+                            options={states} // directly pass the array
+                            placeholder="Select a state"
+                            filterOption={(input, option) =>
+                              option.label.toLowerCase().includes(input.toLowerCase())
+                            }
+                            onChange={(value) => setData({ ...data, stateid: value })}
+                          />
+                      </div>
+                      <div className="col-lg-6 p-1">
+                        GST No
+                        <Input id="gstno" onChange={handleChange} value={data.gstno} placeholder="GST No" />
+                      </div>
+                      <div className="col-lg-12 p-1">
+                        <Button onClick={handleSave} type="primary">Save</Button>
+                        <Button variant="solid" className="ms-1" color="danger">Cancel</Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="row">
             <div className="col-lg-12">
               <div className="row">
                 <div className="col-lg-12">
                   <div className="card p-3">
-                    <Table columns={columns} dataSource={data} onChange={onChange} />
+                    <Table columns={columns} dataSource={result} />
                   </div>
                 </div>
               </div>

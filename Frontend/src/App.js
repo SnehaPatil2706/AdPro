@@ -11,7 +11,6 @@ import PMedias from './components/user/master/PMedia';
 import EMedias from './components/user/master/EMedia';
 import Holidays from './components/user/master/Holiday';
 import Taxes from './components/user/master/Tax';
-import AddClients from './components/user/master/AddClients';
 
 function App() {
   return (
@@ -31,7 +30,6 @@ function App() {
           <Route path="emedias" element={<EMedias />} />
           <Route path="holidays" element={<Holidays/>}/>
           <Route path="taxes" element={<Taxes/>}/>
-          <Route path="addclients" element={<AddClients />} />
         </Route>
       </Routes>
     </BrowserRouter>

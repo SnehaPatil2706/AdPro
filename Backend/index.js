@@ -14,7 +14,9 @@ app.get("/",(req, res)=>{
     res.send("Welcome to AdPro API");
 });
 
+app.use("/authentication",require("./routes/authenticationRoute"));
 app.use("/agencies",require("./routes/agenciesRoute"));
+app.use("/clients",require("./routes/clientsRoute"));
 app.use("/modules",require("./routes/modulesRoute"));
 app.use("/menus",require("./routes/menusRoute"));
 app.use("/roles",require("./routes/rolesRoute"));
@@ -22,7 +24,6 @@ app.use("/modulemenus",require("./routes/moduleMenusRoute"));
 app.use("/rolemodules",require("./routes/roleModulesRoute"));
 app.use("/states",require("./routes/statesRoute"));
 app.use("/users",require("./routes/usersRoute"));
-app.use("/clients",require("./routes/clientsRoute"));
 app.use("/pmedia",require("./routes/pmediaRoute"));
 app.use("/emedias",require("./routes/emediasRoute"));
 app.use("/financialyears",require("./routes/financialYearsRoute"));

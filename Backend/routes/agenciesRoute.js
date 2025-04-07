@@ -27,8 +27,8 @@ router.post("/", async (req, res) => {
         // Check if email already exists
         let existingAgency = await Agency.findOne({ email: data.email });
         if (existingAgency) {
-            return res.status(400).json({ status: "error", data: "Agency with this email already exist." });
-        }
+            res.json({ status: "failed", data: "Agency with this email already exist." });
+         }
         let object = await Agency.create(data);
         res.json({ status: "success", data: object });
     } catch (err) {

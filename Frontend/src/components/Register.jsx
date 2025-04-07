@@ -4,8 +4,7 @@ import axios from 'axios';
 
 function Register() {
   let navigate = useNavigate();
-  const [id, setId] = useState(undefined);
-  const [state, setState] = useState([]);
+  const [states, setStates] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -14,15 +13,7 @@ function Register() {
     gstno: '',
     ownername: '',
     contact: '',
-    email: '',
-    panno: '',
-    bankname: '',
-    ifsccode: '',
-    accountno: '',
-    website: '',
-    instructions: '',
-    status: '',
-    terms: false
+    email: ''
   });
 
   useEffect(() => {
@@ -32,10 +23,10 @@ function Register() {
   const fetchStates = async () => {
     try {
       const response = await axios.get("http://localhost:8081/states");
-      setState(response.data.status === "success" ? response.data.data : []);
+      setStates(response.data.status === "success" ? response.data.data : []);
     } catch (error) {
       console.error("Error fetching states:", error);
-      setState([]);
+      setStates([]);
     }
   };
 
@@ -46,19 +37,15 @@ function Register() {
 
   function handleCreate(e) {
     e.preventDefault();
-    const url = id === undefined ? "http://localhost:8081/agencies" : `http://localhost:8081/agencies/${id}`;
-    const method = id === undefined ? axios.post : axios.put;
-
-    method(url, formData)
+    const url ="http://localhost:8081/authentication/register";
+    axios.post(url, formData)
       .then((res) => {
-        console.log(res.data.data);
-        setFormData({
-          name: '', address: '', city: '', state: '', gstno: '', ownername: '',
-          contact: '', email: '', panno: '', bankname: '', terms: false
-        });
-        if (id !== undefined) setId(undefined);
-        alert("Data Submitted Successfully !!!");
-        navigate('/');
+        if(res.data.status == "success"){
+          alert("Data Submitted Successfully !!!");
+          navigate('/');
+        }else{
+          alert(res.data.data);
+        }
       });
   }
 
@@ -69,7 +56,7 @@ function Register() {
           <section className="section register min-vh-100 d-flex flex-column align-items-center justify-content-center py-4">
             <div className="container">
               <div className="row justify-content-center">
-                <div className="col-lg-4 col-md-6 d-flex flex-column align-items-center justify-content-center">
+                <div className="col-lg-8 col-12 d-flex flex-column align-items-center justify-content-center">
                   <div className="d-flex justify-content-center py-4">
                     <a href="index.html" className="logo d-flex align-items-center w-auto">
                       <img src="assets/img/logo.png" alt="" />
@@ -131,42 +118,7 @@ function Register() {
                               onChange={handleChange}
                             />
                           </div>
-                          
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              name="bankname"
-                              placeholder="Bank Name"
-                              className="form-control"
-                              id="bankname"
-                              value={formData.bankname}
-                              onChange={handleChange}
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              name="ifsccode"
-                              placeholder="IFSC Code"
-                              className="form-control"
-                              id="ifsccode"
-                              value={formData.ifsccode}
-                              onChange={handleChange}
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              name="panno"
-                              placeholder="PAN Number"
-                              className="form-control"
-                              id="panno"
-                              value={formData.panno}
-                              onChange={handleChange}
-                            />
-                          </div>
                         </div>
-
 
 
                         {/* Right Column */}
@@ -191,7 +143,7 @@ function Register() {
                               required
                             >
                               <option value="">Select State</option>
-                              {state.map((s) => (
+                              {states.map((s) => (
                                 <option key={s.id} value={s.name}>
                                   {s.name}
                                 </option>
@@ -220,42 +172,7 @@ function Register() {
                               onChange={handleChange}
                             />
                           </div>
-                          
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              name="accountno"
-                              placeholder="Account Number"
-                              className="form-control"
-                              id="accountno"
-                              value={formData.accountno}
-                              onChange={handleChange}
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              name="website"
-                              placeholder="Website"
-                              className="form-control"
-                              id="website"
-                              value={formData.website}
-                              onChange={handleChange}
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              name="instructions"
-                              placeholder="instructions"
-                              className="form-control"
-                              id="instructions"
-                              value={formData.instructions}
-                              onChange={handleChange}
-                            />
-                          </div>
                         </div>
-
                         {/* Terms and Submit Button */}
                         <div className="col-12">
                           <div className="form-check">
