@@ -112,7 +112,7 @@ function EMedia() {
       );
     });
 
-    axios.get("http://localhost:8081/emedias/" + agency._id).then((res) => {
+    axios.get("http://localhost:8081/emedias/" ).then((res) => {
       setResult(res.data.data);
     });
   }
