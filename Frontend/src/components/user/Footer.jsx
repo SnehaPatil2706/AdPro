@@ -12,7 +12,7 @@ function Footer() {
           . All Rights Reserved
         </div>
         <div className="credits">
-          Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+          Designed by <a href="https://igaptechnologies.com/">iGAP Technologies</a>
         </div>
       </footer>
 
