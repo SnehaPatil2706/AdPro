@@ -39,7 +39,7 @@ function EMedia() {
       axios
         .put(`http://localhost:8081/emedias/${data.id}`, data)
         .then(() => {
-          message.success("Client updated successfully");
+          message.success("E-Media updated successfully");
           loadData();
           setIsEditMode(false);
         })
@@ -48,7 +48,7 @@ function EMedia() {
       axios
         .post("http://localhost:8081/emedias", data)
         .then(() => {
-          message.success("Client added successfully");
+          message.success("E-Media added successfully");
           loadData();
         })
         .catch(() => message.error("Save failed"));
@@ -85,7 +85,7 @@ function EMedia() {
     axios
       .delete(`http://localhost:8081/emedias/${id}`)
       .then(() => {
-        message.success("Client deleted successfully");
+        message.success("E-Media deleted successfully");
         loadData();
       })
       .catch(() => message.error("Delete failed"));
