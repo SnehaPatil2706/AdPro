@@ -2,9 +2,10 @@ let express = require('express');
 const router = express.Router();
 const User = require("../models/UserSchema");
 
-router.get("/", async (req, res) => {
+router.get("/agency/:agencyid", async (req, res) => {
     try {
-        let result = await User.find({});
+        let result = await User.find({agencyid: req.params.agencyid})
+        .populate("roleid");
         res.json({ status: "success", data: result })
     } catch (err) {
         res.json({ status: "error", data: err});
@@ -13,8 +14,9 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
     try {
-        const id = req.params.id;
-        let object = await User.findById(id);
+        // const id = req.params.id;
+        let object = await User.findById(req.params.id)
+        .populate("roleid").populate("agencyid");
         res.json({ status: "success", data: object });
     } catch (err) {
         res.json({ status: "error", data: err });
