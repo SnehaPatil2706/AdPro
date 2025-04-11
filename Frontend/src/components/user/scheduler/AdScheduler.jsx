@@ -70,11 +70,14 @@ function AdScheduler() {
                         <td
                             key={date}
                             className={`align-top p-2 position-relative ${isSunday ? 'bg-lightgray' : ''} ${isToday ? 'bg-info text-white' : ''}`}
-                            onClick={() => handleDateClick(currentDate)}
+
                             style={{ cursor: 'pointer', height: '100px' }}
                         >
                             <div className="date-number"><strong>{date}</strong></div>
-                            <div className="text-primary small mt-1 text-center">New Ad</div>
+                            <div className="text-primary small mt-1 text-center"
+                                style={{ position: 'absolute', bottom: '5px', left: '5px', cursor: 'pointer' }}
+                                onClick={() => handleDateClick(currentDate)}>
+                                New Ad</div>
                         </td>
                     );
                     date++;
@@ -264,10 +267,10 @@ function AdScheduler() {
                                                 style={{ resize: "both", overflow: "auto" }}
                                             />
                                         </div>
-                                    
 
-                                    {/* Section: On Ad Day Notifications */}
-                                   
+
+                                        {/* Section: On Ad Day Notifications */}
+
                                         {/* <div className="col-12 mb-2 fw-bold">Notifications - On Ad Day</div> */}
 
                                         <div className="col-md-6 mb-3">
