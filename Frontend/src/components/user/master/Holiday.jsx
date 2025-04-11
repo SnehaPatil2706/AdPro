@@ -5,10 +5,11 @@ import './calendar.css';
 import { Link } from "react-router";
 import 'react-datepicker/dist/react-datepicker.css';
 import DatePicker from 'react-datepicker';
-import { Switch } from 'antd';
-// import './Holiday.css'; // Add a CSS file for modal blur styles
+import { message,Switch,  } from 'antd';
+import axios from 'axios';
 
 function Holiday() {
+  let agency = JSON.parse(localStorage.getItem("agency")) || null;
   const [selectedDate, setSelectedDate] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [holidayName, setHolidayName] = useState('');
@@ -19,7 +20,6 @@ function Holiday() {
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-
   const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
 
   const handleDateClick = (date) => {
@@ -27,15 +27,28 @@ function Holiday() {
     setShowModal(true);
   };
 
-  const handleSaveHoliday = () => {
-    console.log({
-      date: selectedDate,
-      name: holidayName,
-      everyYear: recurring,
-    });
-    setShowModal(false);
-    setHolidayName('');
-    setRecurring(false);
+  const handleSaveHoliday = (e) => {
+    e.preventDefault();
+    const holidayData = {
+      agencyid: agency._id,
+      hdate: selectedDate,
+      reason: holidayName,
+      every_year: recurring,
+    };
+
+    axios
+      .post("http://localhost:8081/holidays", holidayData)
+      .then(() => {
+        message.success("Holiday added successfully");
+        setShowModal(false);
+        setHolidayName('');
+        setRecurring(false);
+        setSelectedDate(null);
+        // fetchHolidays();
+      })
+      .catch(() => {
+        message.error("Save failed");
+      });
   };
 
   const renderCalendar = () => {
@@ -62,12 +75,12 @@ function Holiday() {
           week.push(
             <td
               key={date}
-              className={`text-center align-top p-2 position-relative ${isSunday ? 'bg-lightgray' : ''} ${isToday ? 'bg-info text-white' : ''}`}
+              className={`align-top p-2 position-relative ${isSunday ? 'bg-lightgray' : ''} ${isToday ? 'bg-info text-white' : ''}`}
               onClick={() => handleDateClick(currentDate)}
               style={{ cursor: 'pointer', height: '100px' }}
             >
-              <strong>{date}</strong>
-              <div className="text-primary small mt-1">New Holiday</div>
+              <div className="date-number"><strong>{date}</strong></div>
+              <div className="text-primary small mt-1 text-center">New Holiday</div>
             </td>
           );
           date++;
@@ -154,13 +167,9 @@ function Holiday() {
           <div className="modal-dialog">
             <div className="modal-content shadow">
               <div className="modal-header">
-                <h5
-                  className="modal-title w-100 text-center"
-                  style={{ color: 'orange', textAlign: 'center', width: '100%' }}
-                >
+                <h5 className="modal-title w-100 text-center" style={{ color: 'orange', fontWeight: 'bold' }}>
                   New Holiday
                 </h5>
-
                 <button
                   type="button"
                   className="btn-close"

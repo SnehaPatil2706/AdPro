@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 let schema = new mongoose.Schema({
-    agencyid: { type: mongoose.Schema.Types.ObjectId, ref: "agencies", required: true },
-    clientid: { type: mongoose.Schema.Types.ObjectId, ref: "clients", required: true },
-    pmediaid: { type: mongoose.Schema.Types.ObjectId, ref: "pmedia", required: true },
-    adate: { type: Date, required: true },
-    description: { type: String, required: true },
-    pmediaroid: { type: mongoose.Schema.Types.ObjectId, ref: "pmediaros", required: true },
-    beforeclientmessage: { type: String, required: true },
-    beforeagencymessage: { type: String, required: true },
-    ondateclientmessage: { type: String, required: true },
-    ondateagencymessage: { type: String, required: true },
+    agencyid: { type: mongoose.Schema.Types.ObjectId, ref: "agencies" },
+    clientid: { type: mongoose.Schema.Types.ObjectId, ref: "clients" },
+    pmediaid: { type: mongoose.Schema.Types.ObjectId, ref: "pmedia" },
+    adate: { type: Date },
+    description: { type: String },
+    pmediaroid: { type: mongoose.Schema.Types.ObjectId, ref: "pmediaros" },
+    beforeclientmessage: { type: String },
+    beforeagencymessage: { type: String },
+    ondateclientmessage: { type: String },
+    ondateagencymessage: { type: String },
 
 });
 

@@ -4,7 +4,7 @@ import { Button, Input, Select, Table, message } from "antd";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Space } from "antd";
+import { Space, Popconfirm } from "antd";
 
 function EMedia() {
   let agency = JSON.parse(localStorage.getItem("agency")) || null;
@@ -146,15 +146,21 @@ function EMedia() {
           >
             Edit
           </Button>
-          <Button
-            type="primary"
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => handleDelete(record._id)}
+          <Popconfirm
+            title="Are you sure you want to delete this media?"
+            onConfirm={() => handleDelete(record._id)}  // ✅ Only runs when user confirms
+            okText="Yes"
+            cancelText="No"
           >
-            Delete
-          </Button>
+            <Button
+              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+            >
+              Delete
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },

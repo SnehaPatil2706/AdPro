@@ -31,4 +31,14 @@
     background-color: rgba(0, 0, 0, 0.3);
     z-index: -1;
   }
+
+
+  .date-number {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  
   

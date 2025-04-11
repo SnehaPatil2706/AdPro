@@ -1,5 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router'
+import { CalendarOutlined } from '@ant-design/icons';
+
 
 function Sidebar() {
 
@@ -78,6 +80,13 @@ function Sidebar() {
         </ul>
       </li>
 
+      <li class="nav-item">
+        <Link class="nav-link " to={"/adschedules"}>
+          <i class="bi bi-grid"></i>
+          {/* <CalendarOutlined /> */}
+          <span>Ad Scheduler</span>
+        </Link>
+      </li>
       
       <li class="nav-item">
         <Link class="nav-link" onClick={(e)=>{ logout(e); }}>
