@@ -264,10 +264,10 @@ function AdScheduler() {
                                                 style={{ resize: "both", overflow: "auto" }}
                                             />
                                         </div>
-                                    </div>
+                                    
 
                                     {/* Section: On Ad Day Notifications */}
-                                    <div className="row mb-4 border-top pt-3">
+                                   
                                         {/* <div className="col-12 mb-2 fw-bold">Notifications - On Ad Day</div> */}
 
                                         <div className="col-md-6 mb-3">
