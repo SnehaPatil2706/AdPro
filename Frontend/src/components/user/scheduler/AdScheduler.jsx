@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../master/calendar.css';
-import { message, Switch, Select, Input, TimePicker } from 'antd';
+import {  Switch, Select, Input, TimePicker } from 'antd';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -14,9 +14,6 @@ function AdScheduler() {
     const [onDayAgencySwitch, setOnDayAgencySwitch] = useState(false);
     const [onDayClientSwitch, setOnDayClientSwitch] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const [clients, setClients] = useState([]); // State for clients
-    const [result, setResult] = useState([]);
-
     const [data, setData] = useState({
         id: "",
         agencyid: agency._id,
@@ -38,7 +35,7 @@ function AdScheduler() {
     const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
     const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
 
-    // Fetch clients from the database
+   
 
     const handleDateClick = (date) => {
         setSelectedDate(date);
@@ -185,7 +182,6 @@ function AdScheduler() {
                                             <Select
                                                 className="w-100"
                                                 showSearch
-                                                options={clients}
                                                 placeholder="Select Client"
                                                 value={data.clientid}
                                                 filterOption={(input, option) =>
@@ -202,7 +198,6 @@ function AdScheduler() {
                                             <Select
                                                 className="w-100"
                                                 showSearch
-                                                options={clients}
                                                 placeholder="Select Newspaper"
                                                 value={data.clientid}
                                                 filterOption={(input, option) =>

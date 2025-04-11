@@ -12,6 +12,7 @@ import EMedias from './components/user/master/EMedia';
 import Holidays from './components/user/master/Holiday';
 import Taxes from './components/user/master/Tax';
 import AdScheduler from './components/user/scheduler/AdScheduler';
+import WorkScheduler from './components/user/scheduler/WorkScheduler';
 
 function App() {
   return (
@@ -34,6 +35,9 @@ function App() {
           </Route>
           <Route path="adschedules" element={<Landing />}>
             <Route path="" element={<AdScheduler />} />
+          </Route>
+          <Route path="workschedules" element={<Landing />}>
+            <Route path="" element={<WorkScheduler />} />
           </Route>
         </Routes>
       </BrowserRouter>

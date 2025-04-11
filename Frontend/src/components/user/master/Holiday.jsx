@@ -4,7 +4,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './calendar.css';
-import { message, Table, Button, Modal, Tooltip, Select } from 'antd';
+import { message, Table, Button, Modal, Tooltip, Select, Popconfirm } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { Link } from "react-router";
@@ -246,6 +246,8 @@ function Holiday() {
               <li className="breadcrumb-item active">Holiday</li>
             </ol>
           </nav>
+
+          {/* Year and Month Picker */}
           <div className='d-flex justify-content-end align-items-center mb-3'>
             <Select
               value={currentMonth}
@@ -271,6 +273,8 @@ function Holiday() {
             </Select>
           </div>
         </div>
+
+        {/* Calendar Table */}
         <table className="table table-bordered calendar-table">
           <thead>
             <tr className="table-light text-center">
@@ -286,6 +290,8 @@ function Holiday() {
           <tbody>{renderCalendar()}</tbody>
         </table>
       </div>
+
+      {/* Modal */}
       {showModal && (
         <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
           <div className="modal-dialog">
@@ -386,12 +392,27 @@ function Holiday() {
               title: 'Actions',
               key: 'actions',
               render: (_, record) => (
-                <Button
-                  type="text"
-                  icon={<DeleteOutlined style={{ color: 'red' }} />}
-                  onClick={() => deleteHoliday(record._id)}
-                  disabled={loading}
-                />
+                <Popconfirm
+                  title="Are you sure you want to delete this Holiday?"
+                  onConfirm={() => deleteHoliday(record._id)}  // ✅ Only runs when user confirms
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button
+                    type="primary"
+                    danger
+                    icon={<DeleteOutlined style={{ fontSize: '12px' }} />}
+                    size="small"
+                    style={{
+                      padding: '0 6px',
+                      fontSize: '12px',
+                      height: '28px', // you can try '22px' for even tighter
+                      lineHeight: '24px'
+                    }}
+                  >
+                  </Button>
+
+                </Popconfirm>
               ),
               width: 80,
               align: 'center'
