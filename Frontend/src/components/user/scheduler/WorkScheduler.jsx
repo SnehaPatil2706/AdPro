@@ -1,8 +1,8 @@
 import React from 'react'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import DatePicker from 'react-datepicker';
-import { Input, Select } from 'antd';
+import { Input } from 'antd';
 import axios from 'axios';
 
 
@@ -28,12 +28,29 @@ function WorkScheduler() {
     })
 
 
+    const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
+    
     const handleMonthChange = (e) => {
         setCurrentMonth(parseInt(e.target.value, 10));
     };
 
     const handleYearChange = (e) => {
         setCurrentYear(parseInt(e.target.value, 10));
+    };
+
+    const handleDateClick = (date) => {
+        if (isPastDate(date)) {
+            return; // Don't open modal for past dates
+        }
+        setSelectedDate(date);
+        setShowModal(true);
+    };
+
+    const isPastDate = (date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+        return date < today;
     };
 
     const renderCalendar = () => {
@@ -60,15 +77,20 @@ function WorkScheduler() {
                     week.push(
                         <td
                             key={date}
-                            className={`align-top p-2 position-relative ${isSunday ? 'bg-lightgray' : ''} ${isToday ? 'bg-info text-white' : ''}`}
+                            className={`align-top p-2 position-relative ${isSunday ? 'bg-lightgray' : ''} ${isToday ? 'bg-info text-white' : ''}${isPastDate(currentDate) ? 'text-muted' : ''}`}
 
                             style={{ cursor: 'pointer', height: '100px' }}
                         >
                             <div className="date-number"><strong>{date}</strong></div>
-                            <div className="text-primary small mt-1 text-center"
-                                style={{ position: 'absolute', bottom: '5px', left: '5px', cursor: 'pointer' }}
-                                onClick={() => handleDateClick(currentDate)}>
-                                New Work</div>
+                            {!isPastDate(currentDate) && (
+                                <div
+                                    className="text-primary small mt-1 text-center"
+                                    style={{ position: 'absolute', bottom: '5px', left: '5px', cursor: 'pointer' }}
+                                    onClick={() => handleDateClick(currentDate)}
+                                >
+                                    New Work
+                                </div>
+                            )}
                         </td>
                     );
                     date++;
@@ -79,24 +101,22 @@ function WorkScheduler() {
         return calendar;
     };
 
-    const handleDateClick = (date) => {
-        setSelectedDate(date);
-        setShowModal(true);
-    };
+    useEffect(() => {
+        loadData();
+    }, []);
 
-    const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-    const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
-
-    function loadData(){
-        axios.get("http://localhost:8081/users").then((res)=>{
-            setUsers(
-                res.data.data.map((user)=>({
-                    label: user.name,
-                    value: user._id
-                }))
-            )
-        })
-    }
+    function loadData() {
+        axios.get("http://localhost:8081/users")
+            .then((res) => {
+                console.log(res.data.data);
+                setUsers(
+                    res.data.data.map((user) => ({
+                        label: user.name,
+                        value: user._id
+                    }))
+                )
+            })
+        };
 
     return (
         <main id="main" className="main">
@@ -172,19 +192,25 @@ function WorkScheduler() {
                                 </div>
                                 <div className="mb-3">
                                     <label >Employee</label><br />
-                                    <Select
+                                    {/* <Select
                                         className="w-100"
                                         showSearch
-                                        style={{ width: 120 }}
-                                        // onChange={handleChange}
-                                        placeholder="Select Employee"
+                                        placeholder="Select User"
                                         options={users}
                                         value={data.userid}
                                         filterOption={(input, option) =>
-                                            option.label.toLowerCase().includes(input.toLowerCase())
+                                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                                         }
                                         onChange={(value) => setData({ ...data, userid: value })}
-                                    />
+                                    /> */}
+                                    <select className='form-control'>
+                                        <option value="">Select User</option>
+                                        {users.map((user) => (
+                                            <option key={user.value} value={user.value}>
+                                                {user.label}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="mb-3">
                                     <label>Work Title</label>

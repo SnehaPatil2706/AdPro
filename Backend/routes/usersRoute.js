@@ -12,6 +12,15 @@ router.get("/agency/:agencyid", async (req, res) => {
     }
 });
 
+router.get("/", async (req, res) => {
+    try {
+        let object = await User.find(req.params.id)
+        res.json({ status: "success", data: object });
+    } catch (err) {
+        res.json({ status: "error", data: err });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         // const id = req.params.id;

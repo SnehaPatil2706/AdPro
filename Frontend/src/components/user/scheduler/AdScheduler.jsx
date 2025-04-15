@@ -1,19 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../master/calendar.css';
-import {  Switch, Select, Input, TimePicker } from 'antd';
+import { Switch, Input, TimePicker, Select } from 'antd';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import axios from 'axios';
 
 function AdScheduler() {
     let agency = JSON.parse(localStorage.getItem("agency")) || null;
+
+    const today = new Date();
+    const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+    const [currentYear, setCurrentYear] = useState(today.getFullYear());
     const [selectedDate, setSelectedDate] = useState(null);
     const [beforeAgencySwitch, setBeforeAgencySwitch] = useState(false);
     const [beforeClientSwitch, setBeforeClientSwitch] = useState(false);
     const [onDayAgencySwitch, setOnDayAgencySwitch] = useState(false);
     const [onDayClientSwitch, setOnDayClientSwitch] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [clients, setClients] = useState([]);
+    const [pmedia, setPmedia] = useState([]);
+
+
     const [data, setData] = useState({
         id: "",
         agencyid: agency._id,
@@ -28,14 +37,17 @@ function AdScheduler() {
         ondateagencymessage: "",
     });
 
-    const today = new Date();
-    const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-    const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
     const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
     const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
 
-   
+    const handleMonthChange = (e) => {
+        setCurrentMonth(parseInt(e.target.value, 10));
+    };
+
+    const handleYearChange = (e) => {
+        setCurrentYear(parseInt(e.target.value, 10));
+    };
 
     const handleDateClick = (date) => {
         setSelectedDate(date);
@@ -85,13 +97,32 @@ function AdScheduler() {
         return calendar;
     };
 
-    const handleMonthChange = (e) => {
-        setCurrentMonth(parseInt(e.target.value, 10));
-    };
+    useEffect(() => {
+        loadData();
+    }, []);
 
-    const handleYearChange = (e) => {
-        setCurrentYear(parseInt(e.target.value, 10));
-    };
+    function loadData() {
+        axios.get("http://localhost:8081/clients")
+            .then((res) => {
+                setClients(
+                    res.data.data.map((client) => ({
+                        label: client.name,
+                        value: client._id
+                    }))
+                );
+            });
+
+        axios.get("http://localhost:8081/pmedia")
+            .then((res) => {
+                setPmedia(
+                    res.data.data.map((paper) => ({
+                        label: paper.name,
+                        value: paper._id
+                    }))
+                );
+            });
+    }
+
 
     return (
         <main id="main" className="main">
@@ -179,7 +210,7 @@ function AdScheduler() {
                                         </div>
                                         <div className="col-md-6">
                                             <label>Client</label>
-                                            <Select
+                                            {/* <Select
                                                 className="w-100"
                                                 showSearch
                                                 placeholder="Select Client"
@@ -188,23 +219,46 @@ function AdScheduler() {
                                                     option.label.toLowerCase().includes(input.toLowerCase())
                                                 }
                                                 onChange={(value) => setData({ ...data, clientid: value })}
-                                            />
+                                            /> */}
+                                            <select className='form-control'>
+                                                <option value="">Select Client</option>
+                                                {clients.map((client) => (
+                                                    <option key={client.value} value={client.value}>
+                                                        {client.label}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
 
                                     <div className="row mb-3">
                                         <div className="col-md-6">
                                             <label>Newspaper</label>
-                                            <Select
+                                            {/* <Select
                                                 className="w-100"
                                                 showSearch
+                                                options={pmedia}
                                                 placeholder="Select Newspaper"
-                                                value={data.clientid}
+                                                value={data.pmediaid}
                                                 filterOption={(input, option) =>
                                                     option.label.toLowerCase().includes(input.toLowerCase())
                                                 }
-                                                onChange={(value) => setData({ ...data, clientid: value })}
-                                            />
+                                                onChange={(value) => setData({ ...data, pmediaid: value })}
+                                            /> */}
+                                            <select
+                                                className='form-control'
+                                                value={data.pmediaid}
+                                                onChange={(e) => setData({ ...data, pmediaid: e.target.value })}
+                                            >
+                                                <option value="">Select Newspaper</option>
+                                                {pmedia.map((paper) => (
+                                                    <option key={paper.value} value={paper.value}>
+                                                        {paper.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            
+
                                         </div>
                                         <div className="col-md-6">
                                             <label>Description</label>
