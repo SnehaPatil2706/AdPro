@@ -6,8 +6,7 @@ let schema = new mongoose.Schema({
     title: { type: String },
     description: { type: String },
     wdate: { type: Date },
-    status: { type: String },
-
+    status: { type: String }
 });
 
 let WorkSchedule = mongoose.model("workschedules", schema);

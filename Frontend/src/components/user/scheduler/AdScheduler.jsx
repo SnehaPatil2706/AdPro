@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../master/calendar.css';
-import { Switch, Input, TimePicker, Select } from 'antd';
+import { Switch, Input, TimePicker } from 'antd';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
@@ -179,8 +179,9 @@ function AdScheduler() {
             </div>
 
             {/* Modal */}
+            {showModal && <div className="modal-backdrop-custom"></div>}
             {showModal && (
-                <d className="modal fade show d-block custom-modal-overlay" tabIndex="-1">
+                <div className="modal fade show d-block custom-modal-overlay" tabIndex="-1">
                     <div className="modal-dialog modal-lg">
                         <div className="modal-content shadow">
                             <div className="modal-header">
@@ -381,7 +382,7 @@ function AdScheduler() {
 
                         </div>
                     </div>
-                </d>
+                </div>
             )}
         </main>
     );

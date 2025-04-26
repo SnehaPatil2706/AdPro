@@ -16,22 +16,22 @@ app.get("/",(req, res)=>{
 
 app.use("/authentication",require("./routes/authenticationRoute"));
 app.use("/agencies",require("./routes/agenciesRoute"));
+app.use("/adschedules",require("./routes/adSchedulesRoute"));
 app.use("/clients",require("./routes/clientsRoute"));
-app.use("/modules",require("./routes/modulesRoute"));
-app.use("/menus",require("./routes/menusRoute"));
-app.use("/roles",require("./routes/rolesRoute"));
-app.use("/modulemenus",require("./routes/moduleMenusRoute"));
-app.use("/rolemodules",require("./routes/roleModulesRoute"));
-app.use("/states",require("./routes/statesRoute"));
-app.use("/users",require("./routes/usersRoute"));
-app.use("/pmedia",require("./routes/pmediaRoute"));
 app.use("/emedias",require("./routes/emediasRoute"));
 app.use("/financialyears",require("./routes/financialYearsRoute"));
 app.use("/gsts",require("./routes/gstsRoute"));
-app.use("/adschedules",require("./routes/adSchedulesRoute"));
 app.use("/holidays",require("./routes/holidaysRoute"));
-app.use("/workschedules",require("./routes/workSchedulesRoute"));
 app.use("/login",require("./routes/loginRoute"));
+app.use("/modules",require("./routes/modulesRoute"));
+app.use("/menus",require("./routes/menusRoute"));
+app.use("/modulemenus",require("./routes/moduleMenusRoute"));
+app.use("/pmedia",require("./routes/pmediaRoute"));
+app.use("/roles",require("./routes/rolesRoute"));
+app.use("/rolemodules",require("./routes/roleModulesRoute"));
+app.use("/states",require("./routes/statesRoute"));
+app.use("/users",require("./routes/usersRoute"));
+app.use("/workschedules",require("./routes/workSchedulesRoute"));
 
 app.listen(8081,()=>{
     console.log("server is running on port http://localhost:8081");

@@ -27,6 +27,22 @@ function Holiday() {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
+  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
+
+  const handleMonthChange = (value) => {
+    setCurrentMonth(parseInt(value, 10));
+  };
+
+  const handleYearChange = (value) => {
+    setCurrentYear(parseInt(value, 10));
+  };
+
+  const handleDateClick = (date) => {
+    setSelectedDate(date);
+    setShowModal(true);
+  };
+  
   // Save holiday to the database
   const handleSaveHoliday = async (e) => {
     e.preventDefault();
@@ -106,18 +122,13 @@ function Holiday() {
     fetchHolidays();
   }, []);
 
-  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
-
+  
   const openReasonModalForDate = (date) => {
     setReasonDate(date);
     setReasonModal(true);
   };
 
-  const handleDateClick = (date) => {
-    setSelectedDate(date);
-    setShowModal(true);
-  };
+ 
 
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentMonth, currentYear);
@@ -217,14 +228,7 @@ function Holiday() {
     return calendar;
   };
 
-  const handleMonthChange = (value) => {
-    setCurrentMonth(parseInt(value, 10));
-  };
-
-  const handleYearChange = (value) => {
-    setCurrentYear(parseInt(value, 10));
-  };
-
+  
 
   const filteredReasons = useMemo(() => {
     if (!reasonDate) return [];

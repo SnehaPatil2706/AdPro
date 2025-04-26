@@ -7,11 +7,10 @@ let schema = new mongoose.Schema({
     adate: { type: Date },
     description: { type: String },
     pmediaroid: { type: mongoose.Schema.Types.ObjectId, ref: "pmediaros" },
-    beforeclientmessage: { type: String },
-    beforeagencymessage: { type: String },
-    ondateclientmessage: { type: String },
-    ondateagencymessage: { type: String },
-
+    beforeclientmessage: { type: Boolean },
+    beforeagencymessage: { type: Boolean },
+    ondateclientmessage: { type: Boolean },
+    ondateagencymessage: { type: Boolean }
 });
 
 let AdSchedule = mongoose.model("adschedules", schema);

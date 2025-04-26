@@ -1,20 +1,34 @@
 let express = require('express');
 const router = express.Router();
 const WorkSchedule = require("../models/WorkScheduleSchema");
+const mongoose = require("mongoose");
 
-router.get("/", async (req, res) => {
+router.get("/agency/:agencyid", async (req, res) => {
     try {
-        let result = await WorkSchedule.find({});
+        let result = await WorkSchedule.find({agencyid: req.params.agencyid})
+        .populate("userid");
         res.json({ status: "success", data: result })
     } catch (err) {
         res.json({ status: "error", data: err});
     }
 });
 
+
+
+router.get("/", async (req, res) => {
+    try {
+        let object = await WorkSchedule.find(req.params.id)
+        res.json({ status: "success", data: object });
+    } catch (err) {
+        res.json({ status: "error", data: err });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
-        const id = req.params.id;
-        let object = await WorkSchedule.findById(id);
+        // const id = req.params.id;
+        let object = await WorkSchedule.findById(req.params.id)
+        .populate("userid").populate("agencyid");
         res.json({ status: "success", data: object });
     } catch (err) {
         res.json({ status: "error", data: err });

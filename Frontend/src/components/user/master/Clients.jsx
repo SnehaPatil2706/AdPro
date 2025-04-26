@@ -44,7 +44,10 @@ function Clients() {
           loadData();
           setIsEditMode(false);
         })
-        .catch(() => message.error("Update failed"));
+        .catch((err) => {
+          console.error("Error updating client:", err);
+          message.error("Update failed");
+        });
     } else {
       axios
         .post("http://localhost:8081/clients", data)
@@ -52,9 +55,13 @@ function Clients() {
           message.success("Client added successfully");
           loadData();
         })
-        .catch(() => message.error("Save failed"));
+        .catch((err) => {
+          console.error("Error adding client:", err);
+          message.error("Save failed");
+        });
     }
   }
+
 
   function handleCancel() {
     setData({
@@ -89,7 +96,10 @@ function Clients() {
         message.success("Client deleted successfully");
         loadData();
       })
-      .catch(() => message.error("Delete failed"));
+      .catch((err) => {
+        console.error("Error deleting client:", err);
+        message.error("Delete failed");
+      });
   }
 
   function loadData() {
@@ -104,18 +114,47 @@ function Clients() {
     });
     setIsEditMode(false);
 
-    axios.get("http://localhost:8081/states").then((res) => {
-      setStates(
-        res.data.data.map((state) => ({
-          label: state.name,
-          value: state._id,
-        }))
-      );
-    });
+    // Log the agency ID for debugging
+    console.log("Agency ID being used for fetching clients:", agency._id);
 
-    axios.get("http://localhost:8081/clients/" + agency._id).then((res) => {
-      setResult(res.data.data);
-    });
+    // Fetch states
+    axios
+      .get("http://localhost:8081/states")
+      .then((res) => {
+        console.log("States API Response:", res.data.data); // Debugging
+        if (res.data && Array.isArray(res.data.data)) {
+          setStates(
+            res.data.data.map((state) => ({
+              label: state.name,
+              value: state._id,
+            }))
+          );
+        } else {
+          console.error("Invalid states response:", res.data);
+          setStates([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching states:", err);
+        setStates([]);
+      });
+
+    // Fetch clients
+    axios
+      .get(`http://localhost:8081/clients/`+ agency._id)
+      .then((res) => {
+        console.log("Clients API Response:", res.data.data); // Debugging
+        if (res.data && Array.isArray(res.data.data)) {
+          setResult(res.data.data);
+        } else {
+          console.error("Invalid clients response:", res.data);
+          setResult([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching clients:", err);
+        setResult([]);
+      });
   }
 
   const columns = [
@@ -134,6 +173,10 @@ function Clients() {
     {
       title: "Contact",
       dataIndex: "contact",
+    },
+    {
+      title: "State",
+      dataIndex: ["stateid", "name"], // Access the populated state name
     },
     {
       title: "Actions",

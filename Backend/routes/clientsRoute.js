@@ -1,67 +1,40 @@
-let express = require('express');
+const express = require("express");
 const router = express.Router();
 const Client = require("../models/ClientSchema");
+// require("../models/StateSchema"); // Just registering it is enough for populate to work
+const mongoose = require("mongoose");
 
-router.get("/agency/:agencyid", async (req, res) => {
+router.get("/:agencyid", async (req, res) => {
     try {
-        let result = await Client.find({ agencyid: req.params.agencyid })
-        .populate("stateid");
-        res.json({ status: "success", data: result })
+        const { agencyid } = req.params;
+
+        // Validate agencyid
+        if (!mongoose.isValidObjectId(agencyid)) {
+            return res.status(400).json({ status: "error", message: "Invalid agency ID" });
+        }
+
+        // Fetch clients by agencyid
+        const clients = await Client.find({ agencyid: new mongoose.Types.ObjectId(agencyid) })
+            .populate("stateid", "name") // Populate state name
+            .exec();
+
+        res.json({ status: "success", data: clients });
     } catch (err) {
-        res.json({ status: "error", data: err});
+        console.error("Error fetching clients:", err);
+        res.status(500).json({ status: "error", message: "Failed to fetch clients" });
     }
 });
 
-router.get("/", async (req, res) => {
+router.get("/:agencyid/:id", async (req, res) => {
     try {
-        let object = await Client.find(req.params.id)
+        const id = req.params.id;
+        let object = await Client.findById(id)
+        .populate("stateid").populate("agencyid").populate("clientid");
         res.json({ status: "success", data: object });
     } catch (err) {
         res.json({ status: "error", data: err });
     }
 });
-
-router.get("/:id", async(req, res) => {
-    try {
-        let object = await Client.findById(req.params.id)
-        .populate("stateid").populate("agencyid");
-        res.json({ status: "success", data: object });
-    } catch (err) {
-        res.json({ status: "error", data: err });
-    }
-});
-
-// router.get("/:agencyid", async (req, res) => {
-//     try {
-//         let result = await Client.find({ agencyid: req.params.agencyid })
-//         .populate("stateid");
-//         res.json({ status: "success", data: result })
-//     } catch (err) {
-//         res.json({ status: "error", data: err});
-//     }
-// });
-
-
-
-// router.get("/:agencyid/:id", async (req, res) => {
-//     try {
-//         const id = req.params.id;
-//         let object = await Client.findById(id)
-//         .populate("stateid").populate("agencyid");
-//         res.json({ status: "success", data: object });
-//     } catch (err) {
-//         res.json({ status: "error", data: err });
-//     }
-// });
-
-// router.get("/", async (req, res) => {
-//     try {
-//         let object = await Client.find(req.params.id)
-//         res.json({ status: "success", data: object });
-//     } catch (err) {
-//         res.json({ status: "error", data: err });
-//     }
-// });
 
 router.post("/", async (req, res) => {
     try {
