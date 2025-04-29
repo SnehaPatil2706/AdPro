@@ -22,6 +22,8 @@ app.use("/emedias",require("./routes/emediasRoute"));
 app.use("/financialyears",require("./routes/financialYearsRoute"));
 app.use("/gsts",require("./routes/gstsRoute"));
 app.use("/holidays",require("./routes/holidaysRoute"));
+app.use("/invoices",require("./routes/invoicesRoute"));
+app.use("/invoiceDetails",require("./routes/invoicedetailsRoute"));
 app.use("/login",require("./routes/loginRoute"));
 app.use("/modules",require("./routes/modulesRoute"));
 app.use("/menus",require("./routes/menusRoute"));

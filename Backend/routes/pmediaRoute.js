@@ -1,6 +1,27 @@
 let express = require('express');
 const router = express.Router();
 const PMedia = require("../models/PMediaSchema");
+const mongoose = require("mongoose");
+
+router.get("/:agencyid", async (req, res) => {
+    try {
+        const { agencyid } = req.params;
+
+        // Validate agencyid
+        if (!mongoose.isValidObjectId(agencyid)) {
+            return res.status(400).json({ status: "error", message: "Invalid agency ID" });
+        }
+
+        // Fetch pmedia by agencyid
+        const pmedias = await PMedia.find({ agencyid: new mongoose.Types.ObjectId(agencyid) });
+            
+
+        res.json({ status: "success", data: pmedias });
+    } catch (err) {
+        console.error("Error fetching pmedias:", err);
+        res.status(500).json({ status: "error", message: "Failed to fetch pmedia" });
+    }
+});
 
 router.get("/", async (req, res) => {
     try {

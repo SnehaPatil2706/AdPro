@@ -155,9 +155,7 @@ function WorkScheduler() {
         }
         return calendar;
     };
-
-
-
+    
     useEffect(() => {
         loadData();
     }, []);
@@ -307,7 +305,13 @@ function WorkScheduler() {
                 <table className="table table-bordered calendar-table">
                     <thead>
                         <tr className="table-light text-center">
-                            <th>SUNDAY</th><th>MONDAY</th><th>TUESDAY</th><th>WEDNESDAY</th><th>THURSDAY</th><th>FRIDAY</th><th>SATURDAY</th>
+                            <th>SUNDAY</th>
+                            <th>MONDAY</th>
+                            <th>TUESDAY</th>
+                            <th>WEDNESDAY</th>
+                            <th>THURSDAY</th>
+                            <th>FRIDAY</th>
+                            <th>SATURDAY</th>
                         </tr>
                     </thead>
                     <tbody>{renderCalendar()}</tbody>

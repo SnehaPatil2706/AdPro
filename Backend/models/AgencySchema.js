@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-let schema = new mongoose.Schema({
+let agencySchema = new mongoose.Schema({
     name: { type: String,  },
     address: { type: String,  },
     city: { type: String,  },
@@ -38,5 +38,5 @@ let schema = new mongoose.Schema({
     status:{ type: String}
 });
 
-let Agency = mongoose.model("agencies",schema);
+let Agency = mongoose.model("Agencies",agencySchema);
 module.exports = Agency;

@@ -13,6 +13,8 @@ import Holidays from './components/user/master/Holiday';
 import Taxes from './components/user/master/Tax';
 import AdScheduler from './components/user/scheduler/AdScheduler';
 import WorkScheduler from './components/user/scheduler/WorkScheduler';
+import InvoiceList from './components/user/invoice/InvoiceList';
+import InvoiceMaster from './components/user/invoice/InvoiceMaster';
 
 function App() {
   return (
@@ -38,6 +40,12 @@ function App() {
           </Route>
           <Route path="workschedules" element={<Landing />}>
             <Route path="" element={<WorkScheduler />} />
+          </Route>
+          <Route path="/invoice" element={<Landing />}>
+            <Route path="invoiceList" element={<InvoiceList />} />
+            <Route path="invoiceMaster" element={<InvoiceMaster />} />
+            <Route path="invoiceMaster/:id" element={<InvoiceMaster />} />
+
           </Route>
         </Routes>
       </BrowserRouter>
