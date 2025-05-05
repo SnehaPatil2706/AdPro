@@ -74,36 +74,29 @@ function InvoiceMaster() {
             }
         };
 
-        const fetchGSTs = async () => {
+        const fetchGstTypes = async () => {
             try {
-                setLoading(true);
                 const res = await axios.get(`http://localhost:8081/gsts/${agencyid}`);
-                console.log("GST API Response:", res.data); // Add this to see the actual response
-
                 if (res.data && Array.isArray(res.data.data)) {
                     const transformedGstTypes = res.data.data.map((gst) => ({
                         value: gst._id,
-                        label: gst.name || gst.title, // Adjust based on actual field names
-                        cgstpercent: gst.cgstPercent || gst.cgstpercent || 0,
-                        sgstpercent: gst.sgstPercent || gst.sgstpercent || 0,
-                        igstpercent: gst.igstPercent || gst.igstpercent || 0,
+                        label: gst.title,
+                        cgstpercent: gst.cgstpercent,
+                        sgstpercent: gst.sgstpercent,
+                        igstpercent: gst.igstpercent,
                     }));
-                    console.log("Transformed GST Types:", transformedGstTypes); // Verify the transformed data
                     setGstTypes(transformedGstTypes);
                 } else {
                     message.error("Invalid GST data format");
                 }
             } catch (error) {
-                console.error("Error fetching GSTs:", error);
-                message.error(error.message || "Failed to fetch gsts");
-            } finally {
-                setLoading(false);
+                console.error("Error fetching GST types:", error);
+                message.error("Failed to fetch GST types");
             }
         };
-        // console.log(setGstTypes);
 
         fetchClients();
-        fetchGSTs();
+        fetchGstTypes();
         fetchNextInvoiceNo();
     }, [agencyid, id]);
 
@@ -123,10 +116,11 @@ function InvoiceMaster() {
                             gstType: invoice.gstType,
                         });
 
-                        setItems(invoice.items || []);
+                        setItems(invoice.details || []);
                         setData({
                             ...data,
                             ...invoice,
+                            id: invoice._id, // Ensure the ID is set here
                             invoiceDate: dayjs(invoice.invoiceDate),
                         });
 
@@ -168,6 +162,7 @@ function InvoiceMaster() {
         const cgstAmount = (taxableAmount * data.cgstPercent) / 100;
         const sgstAmount = (taxableAmount * data.sgstPercent) / 100;
         const igstAmount = (taxableAmount * data.igstPercent) / 100;
+
         const billAmount = taxableAmount + cgstAmount + sgstAmount + igstAmount;
 
         setData((prev) => ({
@@ -183,8 +178,9 @@ function InvoiceMaster() {
 
     const handleSave = async () => {
         try {
-            let formdata = { ...data, details: items };
-            console.log(formdata, "Data");
+            console.log("Data Before Save:", data);
+            console.log("Items Before Save:", items);
+
             setLoading(true); // Start loading
             const values = await form.validateFields();
 
@@ -192,12 +188,6 @@ function InvoiceMaster() {
             const sgstAmount = parseFloat(((data.taxableAmount * data.sgstPercent) / 100).toFixed(2));
             const igstAmount = parseFloat(((data.taxableAmount * data.igstPercent) / 100).toFixed(2));
             const billAmount = parseFloat((data.taxableAmount + cgstAmount + sgstAmount + igstAmount).toFixed(2));
-
-            console.log("Taxable Amount:", data.taxableAmount);
-            console.log("CGST Amount:", cgstAmount);
-            console.log("SGST Amount:", sgstAmount);
-            console.log("IGST Amount:", igstAmount);
-            console.log("Calculated Bill Amount:", billAmount);
 
             const payload = {
                 ...data,
@@ -213,11 +203,15 @@ function InvoiceMaster() {
                 details: items,
             };
 
+            console.log("Payload Sent to Backend:", payload);
+
             if (isEditMode) {
-                await axios.put(`http://localhost:8081/invoices/${id}`, payload);
+                const response = await axios.put(`http://localhost:8081/invoices/${agencyid}/${id}`, payload); // Use data.id
+                console.log("Backend Response:", response.data);
                 message.success("Invoice updated successfully");
             } else {
-                await axios.post("http://localhost:8081/invoices", payload);
+                const response = await axios.post("http://localhost:8081/invoices", payload);
+                console.log("Backend Response:", response.data);
                 message.success("Invoice created successfully");
             }
 
@@ -242,22 +236,12 @@ function InvoiceMaster() {
         const selectedGst = gstTypes.find((gst) => gst.value === value);
         if (!selectedGst) return;
 
-        const taxableAmount = data.taxableAmount;
-        const cgstAmount = (taxableAmount * selectedGst.cgstpercent) / 100;
-        const sgstAmount = (taxableAmount * selectedGst.sgstpercent) / 100;
-        const igstAmount = (taxableAmount * selectedGst.igstpercent) / 100;
-        const billAmount = taxableAmount + cgstAmount + sgstAmount + igstAmount;
-
         setData((prev) => ({
             ...prev,
             gstType: value,
             cgstPercent: selectedGst.cgstpercent,
             sgstPercent: selectedGst.sgstpercent,
             igstPercent: selectedGst.igstpercent,
-            cgstAmount,
-            sgstAmount,
-            igstAmount,
-            billAmount,
         }));
     };
 
@@ -316,6 +300,7 @@ function InvoiceMaster() {
                     value={text}
                     onChange={(e) => handleItemChange(e.target.value, "particular", index)}
                     placeholder="Item"
+                    style={{ backgroundColor: '#f3e8ff', borderColor: '#9b59b6' }}
                 />
             ),
         },
@@ -327,6 +312,7 @@ function InvoiceMaster() {
                     min={1}
                     value={value}
                     onChange={(val) => handleItemChange(val, "quantity", index)}
+                    style={{ backgroundColor: '#f3e8ff', borderColor: '#9b59b6' }}
                 />
             ),
         },
@@ -338,6 +324,7 @@ function InvoiceMaster() {
                     min={0}
                     value={value}
                     onChange={(val) => handleItemChange(val, "amount", index)}
+                    style={{ backgroundColor: '#f3e8ff', borderColor: '#9b59b6' }}
                 />
             ),
         },
@@ -360,7 +347,7 @@ function InvoiceMaster() {
     ];
 
     return (
-        <main id="main" className="main">
+        <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
             <div className="pagetitle">
                 <h1>Design & Printing Invoice Master</h1>
                 <nav>
@@ -447,12 +434,7 @@ function InvoiceMaster() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item label="GST Type" name="gstType" rules={[{ required: true }]}>
-                                <Select
-                                    placeholder="Select GST Type"
-                                    options={gstTypes}
-                                    onChange={handleGstTypeChange}
-                                    loading={loading}
-                                />
+                                <Select placeholder="Select GST Type" onChange={handleGstTypeChange} options={gstTypes} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
@@ -483,7 +465,7 @@ function InvoiceMaster() {
 
                     <Row justify="center" gutter={16}>
                         <Col>
-                            <Button type="primary" icon={<SaveOutlined />} htmlType="submit">
+                            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} >
                                 {isEditMode ? "Update" : "Save"}
                             </Button>
                         </Col>

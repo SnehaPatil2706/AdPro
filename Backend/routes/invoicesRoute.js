@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const Invoice = require('../models/InvoiceSchema'); // Invoice model
+const Invoice = require('../models/InvoiceSchema');
+const InvoiceDetails = require("../models/InvoiceDetailsSchema");
 
 const router = express.Router();
 
@@ -18,29 +19,42 @@ router.get("/last/:agencyid", async (req, res) => {
     }
 });
 
-
-// 🔹 Get single invoice by ID (place this route first)
 router.get("/:agencyid/:id", async (req, res) => {
+    console.log(req.params.agencyid, req.params.id);
     try {
-        const { id } = req.params;
+        const { agencyid, id } = req.params;
 
-        // Validate invoice ID
+
+        // Check if agencyid is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(agencyid)) {
+            return res.status(400).json({ status: "error", message: "Invalid agencyid" });
+        }
+
+        // Check if id is a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ status: "error", message: "Invalid invoice ID" });
         }
 
-        const invoice = await Invoice.findById(id)
-            .populate('clientid')
-            .populate('agencyid');
+        // Fetch the main invoice with the correct agencyid and invoice id
+        const invoice = await Invoice.findOne({ _id: id, agencyid }).populate("clientid");
 
         if (!invoice) {
-            return res.status(404).json({ status: "error", message: "Invoice not found" });
+            return res.json({ status: "error", message: "Invoice not found" });
         }
 
-        res.json({ status: "success", data: invoice });
+        // Fetch the invoice details (items) linked to this invoice
+        const invoiceDetails = await InvoiceDetails.find({ invoiceid: id });
+
+        // Merge invoice and its details into one response
+        const fullInvoice = {
+            ...invoice._doc,   // spread invoice fields
+            items: invoiceDetails  // add items array
+        };
+
+        res.json({ status: "success", data: fullInvoice });
     } catch (err) {
-        console.error("Error fetching invoice:", err);
-        res.status(500).json({ status: "error", message: "Failed to fetch invoice" });
+        console.error(err);
+        res.json({ status: "error", message: err.message });
     }
 });
 
@@ -71,11 +85,9 @@ router.get("/:agencyid", async (req, res) => {
 // 🔹 Get all invoices
 router.get("/", async (req, res) => {
     try {
-        console.log("Fetching all invoices...");
         const invoices = await Invoice.find()
             .populate('clientid')
             .populate('agencyid');
-        console.log("Fetched invoices:", invoices.length);
 
         res.json({ status: "success", data: invoices });
     } catch (err) {
@@ -84,11 +96,12 @@ router.get("/", async (req, res) => {
     }
 });
 
-
 // 🔹 Create new invoice
 router.post("/", async (req, res) => {
     try {
         const data = req.body;
+        // console.log(data);
+
 
         // Debugging: Log the incoming request body
         console.log("Incoming request body:", data);
@@ -108,14 +121,14 @@ router.post("/", async (req, res) => {
             const lastNumber = parseInt(lastInvoice.invoiceNo, 10);
             newNumber = (lastNumber + 1).toString().padStart(3, "0");
         }
-        const { taxableAmount, amount, discount } = data;
-        data.billAmount = (taxableAmount || 0) + (amount || 0) - (discount || 0);
+        const { taxableAmount, amount, discount, cgstAmount, sgstAmount, igstAmount } = data;
+        data.billAmount = ((taxableAmount || 0) + (cgstAmount + sgstAmount + igstAmount));
 
         const newInvoice = await Invoice.create({
             ...data,
             invoiceNo: newNumber
         });
-        
+
         res.status(201).json({ status: "success", data: newInvoice });
     } catch (err) {
         console.error("Error creating invoice:", err); // Debugging log
@@ -125,35 +138,19 @@ router.post("/", async (req, res) => {
 
 
 // 🔹 Update invoice
-// Add a payment to an invoice
-router.put('/invoices/:id/payments', async (req, res) => {
+router.put('/:agencyid/:id', async (req, res) => {
+    const { id } = req.params;
+
     try {
-        const invoiceId = req.params.id;
-        const { paymentDate, description, amount } = req.body;
-
-        const invoice = await Invoice.findById(invoiceId);
-
-        if (!invoice) {
-            return res.status(404).json({ status: 'error', message: 'Invoice not found' });
+        const updatedInvoice = await Invoice.findByIdAndUpdate(id, req.body, { new: true });
+        if (!updatedInvoice) {
+            return res.status(404).json({ message: "Invoice not found" });
         }
 
-        // Add the new payment
-        invoice.payments.push({
-            paymentDate,
-            description,
-            amount,
-        });
-
-        // Update remaining amount
-        const totalPaid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
-        invoice.remaining = invoice.billAmount - totalPaid;
-
-        await invoice.save();
-
-        res.json({ status: 'success', message: 'Payment added successfully', invoice });
+        res.json({ status: "success", data: updatedInvoice });
     } catch (error) {
-        console.error('Error saving payment:', error);
-        res.status(500).json({ status: 'error', message: 'Internal server error' });
+        console.error("Error updating invoice:", error);
+        res.status(500).json({ message: "Failed to update invoice" });
     }
 });
 

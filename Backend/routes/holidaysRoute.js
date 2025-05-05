@@ -29,6 +29,15 @@ router.get("/holiday/:id", async (req, res) => {
     }
 });
 
+router.get("/", async (req, res) => {
+    try {
+        let result = await Holiday.find({});
+        res.json({ status: "success", data: result })
+    } catch (err) {
+        res.json({ status: "error", data: err });
+    }
+});
+
 // Add a new holiday
 router.post("/", async (req, res) => {
     try {

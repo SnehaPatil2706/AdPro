@@ -26,7 +26,7 @@ function Sidebar() {
         <li class="nav-item">
           <a
             class="nav-link collapsed"
-            data-bs-target="#components-nav"
+            data-bs-target="#mastres-nav"
             data-bs-toggle="collapse"
             href="#"
           >
@@ -35,7 +35,7 @@ function Sidebar() {
             <i class="bi bi-chevron-down ms-auto"></i>
           </a>
           <ul
-            id="components-nav"
+            id="mastres-nav"
             class="nav-content collapse "
             data-bs-parent="#sidebar-nav"
           >
@@ -80,6 +80,13 @@ function Sidebar() {
         </li>
 
         <li class="nav-item">
+          <Link class="nav-link " to={"/emedia/emediaROList"}>
+            <i class="bi bi-grid"></i>
+            <span>E-Media RO</span>
+          </Link>
+        </li>
+
+        <li class="nav-item">
           <Link class="nav-link " to={"/invoice/invoiceList"}>
             <i class="bi bi-grid"></i>
             <span>Design & Printing Invoice</span>
@@ -98,6 +105,75 @@ function Sidebar() {
             <i class="bi bi-grid"></i>
             <span>Work Scheduler</span>
           </Link>
+        </li>
+
+        <li class="nav-item">
+          <a
+            class="nav-link collapsed"
+            data-bs-target="#financial-nav"
+            data-bs-toggle="collapse"
+            href="#"
+          >
+            <i class="bi bi-menu-button-wide"></i>
+            <span>Financial Reports</span>
+            <i class="bi bi-chevron-down ms-auto"></i>
+          </a>
+          <ul
+            id="financial-nav"
+            class="nav-content collapse "
+            data-bs-parent="#sidebar-nav"
+          >
+
+            <li>
+              <Link to={"/reports/rptInvoiceList"}>
+                <i class="bi bi-circle"></i>
+                <span>Design & Printing Invoice</span>
+              </Link>
+            </li>
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <a
+            class="nav-link collapsed"
+            data-bs-target="#general-nav"
+            data-bs-toggle="collapse"
+            href="#"
+          >
+            <i class="bi bi-menu-button-wide"></i>
+            <span>General Reports</span>
+            <i class="bi bi-chevron-down ms-auto"></i>
+          </a>
+          <ul
+            id="general-nav"
+            class="nav-content collapse "
+            data-bs-parent="#sidebar-nav"
+          >
+            <li>
+              <Link to={"/reports/rptEmployeeWork"}>
+                <i class="bi bi-circle"></i>
+                <span>Employee Work</span>
+              </Link>
+            </li>
+            <li>
+              <Link to={"/reports/rptClientList"}>
+                <i class="bi bi-circle"></i>
+                <span>Client List</span>
+              </Link>
+            </li>
+            <li>
+              <Link to={"/reports/rptClientAdsList"}>
+                <i class="bi bi-circle"></i>
+                <span>Client Ads</span>
+              </Link>
+            </li>
+            <li>
+              <Link to={"/reports/rptHolidayList"}>
+                <i class="bi bi-circle"></i>
+                <span>Holidays List</span>
+              </Link>
+            </li>
+          </ul>
         </li>
 
         <li class="nav-item">

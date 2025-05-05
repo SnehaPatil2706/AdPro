@@ -46,6 +46,9 @@ function InvoiceList() {
             const response = await axios.get(`http://localhost:8081/invoices/${agencyid}`);
             const invoices = response.data?.data || [];
 
+            console.log(invoices);
+
+
             const clientMap = {};
             clients.forEach(client => {
                 clientMap[client._id] = client.name;
@@ -145,65 +148,12 @@ function InvoiceList() {
         }
     };
 
-    const handlePrint = async (id) => {
-        try {
-            const res = await axios.get(`http://localhost:8081/invoices/${agencyid}/${id}`);
-            console.log("Fetched Invoice Data:", res.data);
-            console.log("Invoice Items:", res.data.data.items);
-            if (res.data.status === "success") {
-                const invoice = res.data.data;
 
-                // Handle missing or empty items field
-                const items = invoice.items || []; // Fallback to an empty array if items is undefined
-
-                // Create a printable area
-                const printableContent = `
-                    <div style="padding: 20px; font-family: Arial, sans-serif;">
-                        <h2 style="text-align: center;">INVOICE</h2>
-                        <p><strong>Invoice No:</strong> ${invoice.invoiceNo}</p>
-                        <p><strong>Date:</strong> ${new Date(invoice.invoiceDate).toLocaleDateString()}</p>
-                        <p><strong>Client Name:</strong> ${invoice.clientid?.name || "N/A"}</p>
-                        <p><strong>Client GST No:</strong> ${invoice.clientid?.gstno || "N/A"}</p>
-                        <table border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Particular</th>
-                                    <th>Quantity</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${items
-                        .map(
-                            (item, index) => `
-                                    <tr>
-                                        <td>${index + 1}</td>
-                                        <td>${item.particular}</td>
-                                        <td>${item.quantity}</td>
-                                        <td>${item.amount.toFixed(2)}</td>
-                                    </tr>
-                                `
-                        )
-                        .join("")}
-                            </tbody>
-                        </table>
-                        <p><strong>Total:</strong> ${invoice.amount.toFixed(2)}</p>
-                    </div>
-                `;
-
-                // Open a new window and print
-                const printWindow = window.open("", "_blank");
-                printWindow.document.write(printableContent);
-                printWindow.document.close();
-                printWindow.print();
-            } else {
-                message.error("Failed to fetch invoice data for printing");
-            }
-        } catch (err) {
-            console.error("Error fetching invoice data for printing:", err);
-            message.error("An error occurred while fetching the invoice for printing");
-        }
+    const handlePrint = (agencyid, invoiceid) => {
+        // console.log(agencyid, invoiceid);
+        
+        // Navigate to the invoice print page with the correct agency ID and invoice ID
+        navigate(`/invoice/invoicePrint/${agencyid}/${invoiceid}`);
     };
 
     form.setFieldsValue({
@@ -234,6 +184,7 @@ function InvoiceList() {
             message.error('An error occurred while saving payment');
         }
     };
+
 
     const handleDeletePayment = async (id) => {
         const updatedPayments = (selectedInvoice.payments || []).filter(p => p._id !== id);
@@ -277,17 +228,20 @@ function InvoiceList() {
                             onClick={() => navigate(`/invoice/invoiceMaster/${record.key}`)}
                         />
                         <Popconfirm
-                            title="Are you sure to delete this invoice?"
-                            onConfirm={() => deleteInvoice(record.key)}
+                            title="Are you sure you want to delete this invoice?"
+                            onConfirm={() => deleteInvoice(record._id)}
                             okText="Yes"
                             cancelText="No"
                         >
                             <Button
-                                size="small"
+                                type="primary"
+                                danger
                                 icon={<DeleteOutlined />}
-                                style={{ background: '#ef4444', color: '#fff' }}
+                                size="small"
+                                style={{ padding: '4px 6px' }} // optional: fine-tune spacing
                             />
                         </Popconfirm>
+
                         {/* <Button
                             size="small"
                             icon={<DeleteOutlined />}
@@ -300,12 +254,14 @@ function InvoiceList() {
                         /> */}
                     </div>
                     <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+
                         <Button
                             size="small"
                             icon={<PrinterOutlined />}
                             style={{ background: '#22c55e', color: '#fff' }}
-                            onClick={() => handlePrint(record.key)}
+                            onClick={() => handlePrint(record.agencyid._id || record.agencyid, record._id)}
                         />
+
                         <Button
                             size="small"
                             icon={<DollarOutlined />}
@@ -379,7 +335,7 @@ function InvoiceList() {
 
 
     return (
-        <main id="main" className="main">
+        <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
             <div className="pagetitle">
                 <h1>Design & Printing Invoice List</h1>
                 <nav>

@@ -19,6 +19,7 @@ app.use("/agencies",require("./routes/agenciesRoute"));
 app.use("/adschedules",require("./routes/adSchedulesRoute"));
 app.use("/clients",require("./routes/clientsRoute"));
 app.use("/emedias",require("./routes/emediasRoute"));
+app.use("/emediaros",require("./routes/emediarosRoute"));
 app.use("/financialyears",require("./routes/financialYearsRoute"));
 app.use("/gsts",require("./routes/gstsRoute"));
 app.use("/holidays",require("./routes/holidaysRoute"));

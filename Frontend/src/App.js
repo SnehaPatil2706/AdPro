@@ -15,6 +15,14 @@ import AdScheduler from './components/user/scheduler/AdScheduler';
 import WorkScheduler from './components/user/scheduler/WorkScheduler';
 import InvoiceList from './components/user/invoice/InvoiceList';
 import InvoiceMaster from './components/user/invoice/InvoiceMaster';
+import EMediaROList from './components/user/e-media/EMediaROList';
+import EMediaROMaster from './components/user/e-media/EMediaROMaster';
+import InvoicePrint from './components/user/invoice/InvoicePrint';
+import InvoiceReport from './components/user/reports/InvoiceReport';
+import ClientListReport from './components/user/reports/ClientListReport';
+import HolidayListReport from './components/user/reports/HolidayListReport';
+import ClientAdsReport from './components/user/reports/ClientAdsReport';
+import EmployeeWorkReport from './components/user/reports/EmployeeWorkReport';
 
 function App() {
   return (
@@ -45,7 +53,18 @@ function App() {
             <Route path="invoiceList" element={<InvoiceList />} />
             <Route path="invoiceMaster" element={<InvoiceMaster />} />
             <Route path="invoiceMaster/:id" element={<InvoiceMaster />} />
-
+            <Route path="invoicePrint/:agencyid/:invoiceid" element={<InvoicePrint />} />
+          </Route>
+          <Route path="emedia" element={<Landing />}>
+            <Route path="emediaROList" element={<EMediaROList />} />
+            <Route path="emediaROMaster" element={<EMediaROMaster />} />
+          </Route>
+          <Route path="reports" element={<Landing />} >
+            <Route path="rptInvoiceList" element={<InvoiceReport />} />
+            <Route path="rptClientList" element={<ClientListReport />} />
+            <Route path="rptClientAdsList" element={<ClientAdsReport />} />
+            <Route path="rptHolidayList" element={<HolidayListReport />} />
+            <Route path="rptEmployeeWork" element={<EmployeeWorkReport />} />
           </Route>
         </Routes>
       </BrowserRouter>

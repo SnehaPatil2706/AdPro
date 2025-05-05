@@ -6,7 +6,7 @@ let schema = new mongoose.Schema({
     contact: { type: Number },
     address: { type: String },
     stateid: { type: mongoose.Schema.Types.ObjectId, ref: "states" },
-    gstno: { type: Number },
+    gstno: { type: String },
 
 });
 
