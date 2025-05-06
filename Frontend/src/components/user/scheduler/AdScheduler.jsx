@@ -193,7 +193,7 @@ function AdScheduler() {
             message.error("Please fill in all fields.");
             return;
         }
-        
+
         const adData = {
             agencyid: agency._id,
             clientid: selectedClient,
@@ -205,7 +205,7 @@ function AdScheduler() {
             ondateagencymessage: onDayAgencySwitch,
             ondateclientmessage: onDayClientSwitch
         };
-        
+
         setLoading(true);
         try {
             let response;
@@ -218,7 +218,7 @@ function AdScheduler() {
                 response = await axios.post('http://localhost:8081/adschedules', adData);
                 message.success("Ad schedule created successfully.");
             }
-            
+
             if (response.data.success === "success") {
                 // Refresh data
                 loadData();
@@ -445,7 +445,11 @@ function AdScheduler() {
                                             <label>Advertise Date</label>
                                             <DatePicker
                                                 selected={selectedDate}
-                                                onChange={(date) => setSelectedDate(date)}
+                                                onChange={(date) =>{
+                                                    setSelectedDate(date)
+                                                    console.log(date);
+                                                    
+                                                }}
                                                 className="form-control"
                                                 dateFormat="yyyy-MM-dd"
                                                 placeholderText="Select a date"
@@ -599,7 +603,7 @@ function AdScheduler() {
 
                                 {/* Modal Footer */}
                                 <div className="modal-footer">
-                                    <button className="btn btn-danger" onClick={() =>{
+                                    <button className="btn btn-danger" onClick={() => {
                                         setShowModal(false)
                                         setIsEditMode(false)
                                     }} disabled={loading}>Cancel</button>

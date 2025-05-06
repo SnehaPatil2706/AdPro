@@ -20,109 +20,24 @@ function EmployeeWorkReport() {
     const [userList, setUserList] = useState([]);
     const [allWorks, setAllWorks] = useState([]);
 
-    const handlePrint = () => {
-        const printContents = printRef.current.innerHTML;
-        const originalContents = document.body.innerHTML;
-        document.body.innerHTML = printContents;
-        window.print();
-        document.body.innerHTML = originalContents;
-        window.location.reload();
-    };
+    const statusOptions = [
+        { label: 'Done', value: 'done' },
+        { label: 'Not Done', value: 'notdone' },
+    ];
 
-    const exportToExcel = () => {
-        const exportData = formattedData.map(({ key, wdate, description }) => ({
-            No: key,
-            Date: wdate,
-            Description: description,
-        }));
+    const getUserName = (id) => {
+        const userObj = userList.find(user => user._id === id);
+        return userObj ? userObj.name : id; 
+    }
 
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Work Report");
-
-        const excelBuffer = XLSX.write(workbook, {
-            bookType: "xlsx",
-            type: "array"
-        });
-
-        const fileData = new Blob([excelBuffer], { type: "application/octet-stream" });
-        saveAs(fileData, "Employee_Work_Report.xlsx");
-    };
-
-    const formattedData = employeeWorkData.map((item, index) => {
-        const matchedUser = userList.find(user => user._id === item.userid);
-        const statusText = item.status?.toLowerCase() === 'yes' ? 'Done' :
-            item.status?.toLowerCase() === 'no' ? 'Not Done' :
-                item.status;
-    
-        return {
-            key: index + 1,
-            ...item,
-            userid: matchedUser ? matchedUser.name : item.userid,
-            wdate: moment(item.wdate).format('DD/MM/YYYY'), // Changed to moment.js format
-            status: statusText,
-        };
-    });
-
-    const resetFilters = () => {
-        setFromDate(null);
-        setToDate(null);
-        setUser(null);
-        setStatusFilter(null);
-        setEmployeeWorkData(allWorks);
-    };
-
-    const employeeWork = async () => {
-        try {
-            let filtered = [...allWorks];
-    
-            console.log("Filtering with:", {
-                user,
-                statusFilter,
-                fromDate: fromDate?.format('YYYY-MM-DD'),
-                toDate: toDate?.format('YYYY-MM-DD')
-            });
-    
-            if (user) {
-                const userObj = userList.find(u => u.name === user);
-                if (userObj) {
-                    filtered = filtered.filter(wk => wk.userid === userObj._id);
-                } else {
-                    message.warning("Selected employee not found");
-                }
-            }
-    
-            if (statusFilter) {
-                const normalized = statusFilter.toLowerCase() === 'done' ? 'yes' :
-                    statusFilter.toLowerCase() === 'notdone' ? 'no' : null;
-                if (normalized) {
-                    filtered = filtered.filter(wk => wk.status?.toLowerCase() === normalized);
-                }
-            }
-    
-            if (fromDate) {
-                            const from = moment(fromDate).startOf('day');
-                            filtered = filtered.filter(ad => {
-                                const adDate = moment(ad.wdate);
-                                return adDate.isSameOrAfter(from, 'day');
-                            });
-                        }
-                        
-                        if (toDate) {
-                            const to = moment(toDate).endOf('day');
-                            filtered = filtered.filter(ad => {
-                                const adDate = moment(ad.wdate);
-                                return adDate.isSameOrBefore(to, 'day');
-                            });
-                        }
-    
-            console.log("Filtered results:", filtered);
-            setEmployeeWorkData(filtered);
-        } catch (error) {
-            console.error("Error filtering data:", error);
-            message.error("Error filtering employee work data");
-        }
-    };
+    const columns = [
+        { title: 'No', dataIndex: 'key', key: 'key' },
+        { title: 'Employee Name', dataIndex: 'userName', key: 'name' },
+        { title: 'Title', dataIndex: 'title', key: 'title' },
+        { title: 'Description', dataIndex: 'description', key: 'description' },
+        { title: 'Date', dataIndex: 'wdate', key: 'date' },
+        { title: 'Status', dataIndex: 'status', key: 'status' },
+    ];
 
     const fetchEmployeeWorks = async () => {
         try {
@@ -151,25 +66,111 @@ function EmployeeWorkReport() {
         }
     };
 
-    const columns = [
-        { title: 'No', dataIndex: 'key', key: 'key' },
-        { title: 'Employee Name', dataIndex: 'userid', key: 'name' },
-        { title: 'Title', dataIndex: 'title', key: 'title' },
-        { title: 'Description', dataIndex: 'description', key: 'description' },
-        { title: 'Date', dataIndex: 'wdate', key: 'date' },
-        { title: 'Status', dataIndex: 'status', key: 'status' },
-    ];
+    const employeeWork = async () => {
+        try {
+            let filtered = [...allWorks];
 
- 
+            console.log(allWorks);
+            console.log("FILTERING...");
+            console.log("FROM DATE:", fromDate?.format?.('YYYY-MM-DD'));
+            console.log("TO DATE:", toDate?.format?.('YYYY-MM-DD'));
+            console.log("RAW WORKS:", allWorks.slice(0, 5));
 
-    const statusOptions = [
-        { label: 'Done', value: 'done' },
-        { label: 'Not Done', value: 'notdone' },
-    ];
+            if (user) {
+                const userObj = userList.find(u => u.name === user);
+                if (userObj) {
+                    filtered = filtered.filter(wk => wk.userid === userObj._id);
+                } else {
+                    message.warning("Selected employee not found");
+                }
+            }
+
+            if (statusFilter) {
+                const normalized = statusFilter.toLowerCase() === 'done' ? 'yes' :
+                    statusFilter.toLowerCase() === 'notdone' ? 'no' : null;
+                if (normalized) {
+                    filtered = filtered.filter(wk => wk.status?.toLowerCase() === normalized);
+                }
+            }
+
+            if (fromDate) {
+                const from = new Date(fromDate).setHours(0, 0, 0, 0);
+                filtered = filtered.filter(wk => {
+                    const wkDate = new Date(wk.wdate).setHours(0, 0, 0, 0);
+                    return wkDate >= from;
+                });
+                console.log(filtered);
+            }
+            if (toDate) {
+                const to = new Date(toDate).setHours(0, 0, 0, 0);
+                filtered = filtered.filter(wk => {
+                    const wkDate = new Date(wk.wdate).setHours(0, 0, 0, 0);
+                    return wkDate <= to;
+                });
+                console.log(filtered);
+            }
+
+            console.log("Filtered Works:", filtered);
+            setEmployeeWorkData(filtered);
+        } catch (error) {
+            console.error("Error filtering works:", error);
+            message.error("Error filtering works");
+        }
+    };
+
+    const formattedData = employeeWorkData.map((item, index) => ({
+        key: index + 1,
+        ...item,
+        userName: getUserName(item.userid),
+        wdate: new Date(item.wdate).toLocaleDateString('en-GB'),
+        status: item.status?.toLowerCase() === 'yes' ? 'Done' : 'Not Done',
+    }));
+
+    const handlePrint = () => {
+        const printContents = printRef.current.innerHTML;
+        const originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload();
+    };
+
+    const exportToExcel = () => {
+        const exportData = formattedData.map(({ key,userName, title , description,wdate, status, }) => ({
+            No: key,
+            EmployeeName: userName,
+            Title: title,
+            Description: description,
+            Date: wdate,
+            Status: status,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Work Report");
+
+        const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array"
+        });
+
+        const fileData = new Blob([excelBuffer], { type: "application/octet-stream" });
+        saveAs(fileData, "Employee_Work_Report.xlsx");
+    };
+
+    const resetFilters = () => {
+        setFromDate(null);
+        setToDate(null);
+        setUser(null);
+        setStatusFilter(null);
+        setEmployeeWorkData(allWorks);
+    };
 
     useEffect(() => {
         fetchEmployees();
-        fetchEmployeeWorks();
+        fetchEmployeeWorks().then(() => {
+            console.log("Sample Works:", allWorks[0]);
+        });
     }, []);
 
     return (

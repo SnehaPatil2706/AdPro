@@ -21,53 +21,9 @@ function ClientAdsReport() {
     const agencyid = agency?._id;
     const [allAds, setAllAds] = useState([]);
 
-    const handlePrint = () => {
-        const printContents = printRef.current.innerHTML;
-        const originalContents = document.body.innerHTML;
-        document.body.innerHTML = printContents;
-        window.print();
-        document.body.innerHTML = originalContents;
-        window.location.reload(); // reload to restore React state
-    };
-
     const getClientName = (id) => {
         const clientObj = clientList.find(client => client._id === id);
         return clientObj ? clientObj.name : id; // fallback to id if not found
-    };
-
-    const exportToExcel = () => {
-        const exportData = formattedData.map(({ key, adate, description }) => ({
-            No: key,
-            Date: adate,
-            Description: description,
-        }));
-
-
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Holidays");
-
-        const excelBuffer = XLSX.write(workbook, {
-            bookType: "xlsx",
-            type: "array"
-        });
-
-        const fileData = new Blob([excelBuffer], { type: "application/octet-stream" });
-        saveAs(fileData, "Client_Ad.xlsx");
-    };
-
-    const formattedData = clientAdData.map((item, index) => ({
-        key: index + 1,
-        ...item,
-        clientName: getClientName(item.clientid),
-        adate: new Date(item.adate).toLocaleDateString('en-GB'), // dd/mm/yyyy
-    }));
-
-    const resetFilters = () => {
-        setClient(null);
-        setFromDate(null);
-        setToDate(null);
-        setClientAdData(allAds); // restore unfiltered data
     };
 
     const columns = [
@@ -77,10 +33,28 @@ function ClientAdsReport() {
         { title: 'Description', dataIndex: 'description', key: 'description' },
     ];
 
+    const fetchClientAds = async () => {
+        try {
+            const response = await axios.get(`http://localhost:8081/adschedules`);
+            if (Array.isArray(response.data?.data)) {
+                setAllAds(response.data.data); // master copy
+                setClientAdData(response.data.data); // initial filtered list
+                console.log(response.data.data);
+
+            } else {
+                message.warning("Client Ads data is not in expected array format.");
+                setAllAds([]);
+                setClientAdData([]);
+            }
+        } catch (error) {
+            console.error("Failed to load client ads", error);
+            message.error("Failed to load client ads");
+        }
+    };
+
     const fetchClients = async () => {
         try {
             const response = await axios.get(`http://localhost:8081/clients/${agencyid}`);
-            console.log("Client API response:", response.data);
             if (Array.isArray(response.data?.data)) {
                 setClientList(response.data.data);
             } else {
@@ -93,31 +67,14 @@ function ClientAdsReport() {
         }
     };
 
-    const fetchClientAds = async () => {
-        try {
-            const response = await axios.get(`http://localhost:8081/adschedules`);
-            // console.log(response.data.data[0].adate);
-            if (Array.isArray(response.data?.data)) {
-                setAllAds(response.data.data); // master copy
-                setClientAdData(response.data.data); // initial filtered list
-            } else {
-                message.warning("Client Ads data is not in expected array format.");
-                setAllAds([]);
-                setClientAdData([]);
-            }
-        } catch (error) {
-            console.error("Failed to load client ads", error);
-            message.error("Failed to load client ads");
-        }
-    };
-
     const clientAds = () => {
         try {
             let filtered = [...allAds]; // always start from full dataset
-
+            console.log(fromDate, "fromDate");
+            
             console.log(allAds);
             console.log("FILTERING...");
-            console.log("FROM DATE:", fromDate?.format?.('YYYY-MM-DD'));
+            console.log("FROM DATE:", fromDate?.format?.('DD/MM/YYYY'));
             console.log("TO DATE:", toDate?.format?.('YYYY-MM-DD'));
             console.log("RAW ADS:", allAds.slice(0, 5));
 
@@ -128,25 +85,24 @@ function ClientAdsReport() {
                 } else {
                     message.warning("Selected client not found");
                 }
-            }
+            };
 
             if (fromDate) {
-                const from = moment(fromDate).startOf('day');
+                const from = new Date(fromDate).setHours(0, 0, 0, 0);
                 filtered = filtered.filter(ad => {
-                    const adDate = moment(ad.adate);
-                    return adDate.isSameOrAfter(from, 'day');
+                    const adDate = new Date(ad.adate).setHours(0, 0, 0, 0);
+                    return adDate >= from;
                 });
+                console.log(filtered);
             }
-            
             if (toDate) {
-                const to = moment(toDate).endOf('day');
+                const to = new Date(toDate).setHours(0, 0, 0, 0);
                 filtered = filtered.filter(ad => {
-                    const adDate = moment(ad.adate);
-                    return adDate.isSameOrBefore(to, 'day');
+                    const adDate = new Date(ad.adate).setHours(0, 0, 0, 0);
+                    return adDate <= to;
                 });
+                console.log(filtered);
             }
-            
-
             console.log("FILTERED ADS:", filtered);
             setClientAdData(filtered);
         } catch (error) {
@@ -155,11 +111,53 @@ function ClientAdsReport() {
         }
     };
 
+    const formattedData = clientAdData.map((item, index) => ({
+        key: index + 1,
+        ...item,
+        clientName: getClientName(item.clientid),
+        adate: new Date(item.adate).toLocaleDateString('en-GB'), // dd/mm/yyyy
+    }));
+
+    const handlePrint = () => {
+        const printContents = printRef.current.innerHTML;
+        const originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload(); // reload to restore React state
+    };
+
+    const exportToExcel = () => {
+        const exportData = formattedData.map(({ key, clientName, adate, description }) => ({
+            No: key,
+            ClientName: clientName,
+            Date: adate,
+            Description: description,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Client Ads");
+
+        const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array"
+        });
+
+        const fileData = new Blob([excelBuffer], { type: "application/octet-stream" });
+        saveAs(fileData, "Client_Ad.xlsx");
+    };
+
+    const resetFilters = () => {
+        setClient(null);
+        setFromDate(null);
+        setToDate(null);
+        setClientAdData(allAds); // restore unfiltered data
+    };
+
     useEffect(() => {
         fetchClients();
-        fetchClientAds().then(() => {
-            console.log("Sample ad:", allAds[0]);
-        });
+        fetchClientAds()
     }, []);
 
     return (
@@ -201,11 +199,16 @@ function ClientAdsReport() {
                 </Col>
                 <Col span={6}>
                     <label>From Date</label>
-                    <DatePicker
+                    {/* <DatePicker
                         style={{ width: '60%' }}
                         format="DD/MM/YYYY"
                         value={fromDate}
                         onChange={setFromDate}
+                    /> */}
+                    <DatePicker
+                        format="DD/MM/YYYY"
+                        value={fromDate}
+                        onChange={(value) => setFromDate(value)} // this ensures it's a Moment object
                     />
                 </Col>
                 <Col span={6}>

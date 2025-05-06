@@ -33,10 +33,17 @@ function Tax() {
 
   function handleSave(e) {
     e.preventDefault();
-
+  
+    const payload = {
+      ...data,
+      cgstpercent: parseFloat(data.cgstpercent || 0).toFixed(2),
+      sgstpercent: parseFloat(data.sgstpercent || 0).toFixed(2),
+      igstpercent: parseFloat(data.igstpercent || 0).toFixed(2),
+    };
+  
     if (isEditMode) {
       axios
-        .put(`http://localhost:8081/gsts/${data.id}`, data)
+        .put(`http://localhost:8081/gsts/${data.id}`, payload)
         .then(() => {
           message.success("GST updated successfully");
           loadData();
@@ -45,14 +52,14 @@ function Tax() {
         .catch(() => message.error("Update failed"));
     } else {
       axios
-        .post("http://localhost:8081/gsts", data)
+        .post("http://localhost:8081/gsts", payload)
         .then(() => {
           message.success("GST added successfully");
           loadData();
         })
         .catch(() => message.error("Save failed"));
     }
-  }
+  };  
 
   function handleCancel() {
     setData({
@@ -102,8 +109,6 @@ function Tax() {
     });
     setIsEditMode(false);
 
-    
-
     axios.get("http://localhost:8081/gsts/").then((res) => {
       setResult(res.data.data);
     });
@@ -121,16 +126,18 @@ function Tax() {
     {
       title: "CGST %",
       dataIndex: "cgstpercent",
+      render: (val) => Number(val).toFixed(2),
     },
     {
       title: "SGST %",
       dataIndex: "sgstpercent",
+      render: (val) => Number(val).toFixed(2),
     },
     {
       title: "IGST %",
       dataIndex: "igstpercent",
+      render: (val) => Number(val).toFixed(2),
     },
-    
     {
       title: "Actions",
       render: (record) => (
