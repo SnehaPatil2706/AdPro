@@ -62,6 +62,8 @@ router.get("/:id", async (req, res) => {
 // Create a new record
 router.post("/", async (req, res) => {
     try {
+        // console.log(req.body); // Log the request body for debugging
+        
         const data = req.body;
         const object = await EMediaRO.create(data);
         res.json({ status: "success", data: object });

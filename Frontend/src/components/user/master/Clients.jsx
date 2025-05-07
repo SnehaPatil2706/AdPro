@@ -31,7 +31,7 @@ function Clients() {
 
   function handleChange(e) {
     setData({ ...data, [e.target.id]: e.target.value });
-  }
+  };
 
   function handleSave(e) {
     e.preventDefault();
@@ -60,8 +60,7 @@ function Clients() {
           message.error("Save failed");
         });
     }
-  }
-
+  };
 
   function handleCancel() {
     setData({
@@ -74,7 +73,7 @@ function Clients() {
       gstno: "",
     });
     setIsEditMode(false);
-  }
+  };
 
   function handleEdit(record) {
     setData({
@@ -87,7 +86,7 @@ function Clients() {
       gstno: record.gstno,
     });
     setIsEditMode(true);
-  }
+  };
 
   function handleDelete(id) {
     axios
@@ -100,7 +99,7 @@ function Clients() {
         console.error("Error deleting client:", err);
         message.error("Delete failed");
       });
-  }
+  };
 
   function loadData() {
     setData({
@@ -155,7 +154,7 @@ function Clients() {
         console.error("Error fetching clients:", err);
         setResult([]);
       });
-  }
+  };
 
   const columns = [
     {

@@ -645,7 +645,7 @@ function AdScheduler() {
                 bodyStyle={{
                     padding: '20px 24px'
                 }}
-                width={600} // Set fixed width
+                width={700} // Set fixed width
                 style={{
                     top: '50px',
                 }}

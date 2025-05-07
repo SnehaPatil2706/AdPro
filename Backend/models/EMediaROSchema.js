@@ -5,7 +5,7 @@ const schema = new mongoose.Schema({
     rono: { type: Number },
     rodate: { 
         type: Date, 
-        required: true,
+        // required: true,
         validate: {
             validator: function(value) {
                 return !isNaN(new Date(value).getTime()); // Check if the date is valid
@@ -26,7 +26,7 @@ const schema = new mongoose.Schema({
     chequeno: { type: String },
     chequedate: { 
         type: Date, 
-        required: true,
+        // required: true,
         validate: {
             validator: function(value) {
                 return !isNaN(new Date(value).getTime()); // Check if the date is valid
