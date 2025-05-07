@@ -149,22 +149,34 @@ function EMediaROMaster() {
         return ((commissionPercent / 100) * totalCharges).toFixed(2);
     };
 
-    const calculateROBillAmount = () => {
+    const calculateROBillAmount = (applyGst = false) => {
         const totalCharges = parseFloat(calculateTotalCharges()) || 0;
         const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
-        return (totalCharges - commissionAmount).toFixed(2);
+        let robillamount = (totalCharges - commissionAmount).toFixed(2);
+    
+        // Apply GST if needed
+        if (applyGst && data.gstid) {
+            const selectedGst = gsts.find(gst => gst.value === data.gstid);
+            if (selectedGst) {
+                const gstAmount = (parseFloat(robillamount) * (selectedGst.cgstpercent + selectedGst.sgstpercent + selectedGst.igstpercent) / 100).toFixed(2);
+                robillamount = (parseFloat(robillamount) + parseFloat(gstAmount)).toFixed(2);
+            }
+        }
+    
+        form.setFieldsValue({ robillamount });
+        return robillamount;
     };
 
     const handleGstTypeChange = (value) => {
         const selectedGst = gsts.find((gst) => gst.value === value);
         if (!selectedGst) return;
-
-        // Calculate GST amounts based on total charges
-        const totalCharges = parseFloat(calculateTotalCharges()) || 0;
-        const cgstAmount = (totalCharges * selectedGst.cgstpercent / 100).toFixed(2);
-        const sgstAmount = (totalCharges * selectedGst.sgstpercent / 100).toFixed(2);
-        const igstAmount = (totalCharges * selectedGst.igstpercent / 100).toFixed(2);
-
+    
+        // Calculate GST amounts based on RO bill amount (after commission)
+        const robillamountBeforeGst = calculateROBillAmount(false);
+        const cgstAmount = (robillamountBeforeGst * selectedGst.cgstpercent / 100).toFixed(2);
+        const sgstAmount = (robillamountBeforeGst * selectedGst.sgstpercent / 100).toFixed(2);
+        const igstAmount = (robillamountBeforeGst * selectedGst.igstpercent / 100).toFixed(2);
+    
         // Update both state and form values
         setData((prev) => ({
             ...prev,
@@ -176,7 +188,7 @@ function EMediaROMaster() {
             sgstamount: sgstAmount,
             igstamount: igstAmount
         }));
-
+    
         form.setFieldsValue({
             gstid: value,
             cgstpercent: selectedGst.cgstpercent,
@@ -186,21 +198,37 @@ function EMediaROMaster() {
             sgstamount: sgstAmount,
             igstamount: igstAmount
         });
+    
+        // Recalculate final RO bill amount with GST
+        calculateROBillAmount(true);
     };
 
     const handleSave = async (values) => {
         try {
-            // console.log('Form values:', values);
-            // console.log('RO Date:', values.rodate); // Check if this is a moment object
-            // console.log('Cheque Date:', values.chequedate);
             setLoading(true);
-
+    
+            // Recalculate everything before saving
+            const totalCharges = parseFloat(calculateTotalCharges()) || 0;
+            const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
+            const robillamountBeforeGst = (totalCharges - commissionAmount).toFixed(2);
+            let robillamount = robillamountBeforeGst;
+    
+            // Apply GST if selected
+            if (values.gstid) {
+                const selectedGst = gsts.find(gst => gst.value === values.gstid);
+                if (selectedGst) {
+                    const gstAmount = (parseFloat(robillamountBeforeGst) * 
+                                     (selectedGst.cgstpercent + selectedGst.sgstpercent + selectedGst.igstpercent) / 100);
+                    robillamount = (parseFloat(robillamountBeforeGst) + parseFloat(gstAmount)).toFixed(2);
+                }
+            }
+    
             const payload = {
                 ...values,
                 totalspots: calculateTotalSpots(),
-                totalcharges: calculateTotalCharges(),
-                comissionamount: calculateCommissionAmount(),
-                robillamount: calculateROBillAmount(),
+                totalcharges: totalCharges,
+                comissionamount: commissionAmount,
+                robillamount: robillamount,
                 rodate: values.rodate ? dayjs(values.rodate).format('YYYY-MM-DD') : null,
                 chequedate: values.chequedate ? dayjs(values.chequedate).format('YYYY-MM-DD') : null,
                 items: items.map(item => ({
@@ -211,20 +239,19 @@ function EMediaROMaster() {
                     ] : null,
                     fromTime: item.fromTime ? dayjs(item.fromTime).format('HH:mm:ss') : null,
                     toTime: item.toTime ? dayjs(item.toTime).format('HH:mm:ss') : null,
-                    // Ensure totalCharges is included in the payload
                     totalCharges: item.totalCharges || 0
                 })),
                 agencyid: agencyid,
                 status: "active"
             };
-
+    
             const response = isEditMode
                 ? await axios.put(`http://localhost:8081/emediaros/${id}`, payload)
                 : await axios.post('http://localhost:8081/emediaros', payload);
-
+    
             message.success(`Record ${isEditMode ? 'updated' : 'created'} successfully`);
             navigate("/emedia/emediaROList");
-
+    
         } catch (err) {
             console.error('Save error:', err);
             message.error(err.response?.data?.message || 'Failed to save record');
@@ -487,38 +514,45 @@ function EMediaROMaster() {
     useEffect(() => {
         const totalCharges = parseFloat(calculateTotalCharges()) || 0;
         const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
-        const robillamount = (totalCharges - commissionAmount).toFixed(2);
-
+        const robillamountBeforeGst = (totalCharges - commissionAmount).toFixed(2);
+    
         // Recalculate GST amounts if GST type is selected
         if (data.gstid) {
             const selectedGst = gsts.find(gst => gst.value === data.gstid);
             if (selectedGst) {
-                const cgstAmount = (totalCharges * selectedGst.cgstpercent / 100).toFixed(2);
-                const sgstAmount = (totalCharges * selectedGst.sgstpercent / 100).toFixed(2);
-                const igstAmount = (totalCharges * selectedGst.igstpercent / 100).toFixed(2);
-
+                const cgstAmount = (robillamountBeforeGst * selectedGst.cgstpercent / 100).toFixed(2);
+                const sgstAmount = (robillamountBeforeGst * selectedGst.sgstpercent / 100).toFixed(2);
+                const igstAmount = (robillamountBeforeGst * selectedGst.igstpercent / 100).toFixed(2);
+    
                 form.setFieldsValue({
                     cgstamount: cgstAmount,
                     sgstamount: sgstAmount,
                     igstamount: igstAmount
                 });
-
+    
                 setData(prev => ({
                     ...prev,
                     cgstamount: cgstAmount,
                     sgstamount: sgstAmount,
                     igstamount: igstAmount
                 }));
+    
+                // Calculate final RO bill amount with GST
+                const robillamount = (parseFloat(robillamountBeforeGst) + 
+                                   parseFloat(cgstAmount) + 
+                                   parseFloat(sgstAmount) + 
+                                   parseFloat(igstAmount));
+                form.setFieldsValue({ robillamount: robillamount.toFixed(2) });
             }
         }
-
+    
         form.setFieldsValue({
             totalspots: calculateTotalSpots(),
             totalcharges: totalCharges,
             comissionamount: commissionAmount,
-            robillamount: robillamount
+            robillamount: data.gstid ? form.getFieldValue('robillamount') : robillamountBeforeGst
         });
-    }, [items, form, data.comissionpercent, data.gstid]);
+    }, [items, form.getFieldValue('comissionpercent'), data.gstid]);
 
     return (
         <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
