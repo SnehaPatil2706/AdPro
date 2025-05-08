@@ -1270,6 +1270,14 @@ function EMediaROMaster() {
                     // Recalculate totalSpots when dailySpots changes
                     if (field === 'dailySpots') {
                         updatedItem.totalSpots = (updatedItem.days || 0) * (value || 0);
+                    };
+
+                    // When bonus/paid changes to "bonus", set charges to 0 and make read-only
+                    if (field === 'bonusPaid') {
+                        if (value === 'bonus') {
+                            updatedItem.charges = '0';
+                            updatedItem.totalCharges = '0';
+                        }
                     }
 
                     // Calculate total charges when charges, duration, or totalSpots change
@@ -1303,23 +1311,38 @@ function EMediaROMaster() {
         return ((commissionPercent / 100) * totalCharges).toFixed(2);
     };
 
-    const calculateROBillAmount = () => {
+    const calculateROBillAmount = (includeGst = false) => {
         const totalCharges = parseFloat(calculateTotalCharges()) || 0;
         const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
-        return (totalCharges - commissionAmount).toFixed(2);
+        let robillamount = (totalCharges - commissionAmount).toFixed(2);
+
+        // Only apply GST if explicitly requested and GST type is selected
+        if (includeGst && data.gstid) {
+            const selectedGst = gsts.find(gst => gst.value === data.gstid);
+            if (selectedGst) {
+                const gstAmount = (parseFloat(robillamount) *
+                    (selectedGst.cgstpercent + selectedGst.sgstpercent + selectedGst.igstpercent) / 100);
+                robillamount = (parseFloat(robillamount) + parseFloat(gstAmount)).toFixed(2);
+            }
+        }
+
+        form.setFieldsValue({ robillamount });
+        return robillamount;
     };
 
     const handleGstTypeChange = (value) => {
         const selectedGst = gsts.find((gst) => gst.value === value);
         if (!selectedGst) return;
 
-        // Calculate GST amounts based on total charges
-        const totalCharges = parseFloat(calculateTotalCharges()) || 0;
-        const cgstAmount = (totalCharges * selectedGst.cgstpercent / 100).toFixed(2);
-        const sgstAmount = (totalCharges * selectedGst.sgstpercent / 100).toFixed(2);
-        const igstAmount = (totalCharges * selectedGst.igstpercent / 100).toFixed(2);
+        // Get RO bill amount before GST
+        const robillamountBeforeGst = calculateROBillAmount(false);
 
-        // Update both state and form values
+        // Calculate GST amounts
+        const cgstAmount = (robillamountBeforeGst * selectedGst.cgstpercent / 100).toFixed(2);
+        const sgstAmount = (robillamountBeforeGst * selectedGst.sgstpercent / 100).toFixed(2);
+        const igstAmount = (robillamountBeforeGst * selectedGst.igstpercent / 100).toFixed(2);
+
+        // Update state and form values
         setData((prev) => ({
             ...prev,
             gstid: value,
@@ -1340,21 +1363,40 @@ function EMediaROMaster() {
             sgstamount: sgstAmount,
             igstamount: igstAmount
         });
+
+        // Calculate and set final RO bill amount with GST
+        const finalAmount = (parseFloat(robillamountBeforeGst) +
+            parseFloat(cgstAmount) +
+            parseFloat(sgstAmount) +
+            parseFloat(igstAmount));
+        form.setFieldsValue({ robillamount: finalAmount.toFixed(2) });
     };
 
     const handleSave = async (values) => {
         try {
-            // console.log('Form values:', values);
-            // console.log('RO Date:', values.rodate); // Check if this is a moment object
-            // console.log('Cheque Date:', values.chequedate);
             setLoading(true);
+
+            // Recalculate everything before saving
+            const totalCharges = parseFloat(calculateTotalCharges()) || 0;
+            const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
+            let robillamount = (totalCharges - commissionAmount).toFixed(2);
+
+            // Apply GST if selected
+            if (values.gstid) {
+                const selectedGst = gsts.find(gst => gst.value === values.gstid);
+                if (selectedGst) {
+                    const gstAmount = (parseFloat(robillamount) *
+                        (selectedGst.cgstpercent + selectedGst.sgstpercent + selectedGst.igstpercent) / 100);
+                    robillamount = (parseFloat(robillamount) + parseFloat(gstAmount)).toFixed(2);
+                }
+            }
 
             const payload = {
                 ...values,
                 totalspots: calculateTotalSpots(),
-                totalcharges: calculateTotalCharges(),
-                comissionamount: calculateCommissionAmount(),
-                robillamount: calculateROBillAmount(),
+                totalcharges: totalCharges,
+                comissionamount: commissionAmount,
+                robillamount: robillamount,
                 rodate: values.rodate ? dayjs(values.rodate).format('YYYY-MM-DD') : null,
                 chequedate: values.chequedate ? dayjs(values.chequedate).format('YYYY-MM-DD') : null,
                 items: items.map(item => ({
@@ -1365,7 +1407,6 @@ function EMediaROMaster() {
                     ] : null,
                     fromTime: item.fromTime ? dayjs(item.fromTime).format('HH:mm:ss') : null,
                     toTime: item.toTime ? dayjs(item.toTime).format('HH:mm:ss') : null,
-                    // Ensure totalCharges is included in the payload
                     totalCharges: item.totalCharges || 0
                 })),
                 agencyid: agencyid,
@@ -1411,7 +1452,7 @@ function EMediaROMaster() {
             render: (_, record) => (
                 <RangePicker
                     format="DD/MM/YYYY"
-                    style={{ width: '100%', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
+                    style={{ width: '100%', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
                     value={record.fromToDate}
                     onChange={(dates) => handleItemChange(record.key, 'fromToDate', dates)}
                 />
@@ -1426,6 +1467,7 @@ function EMediaROMaster() {
                 <Input
                     value={text}
                     readOnly
+                    style={{ width: '100%', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
                 />
             ),
         },
@@ -1478,6 +1520,7 @@ function EMediaROMaster() {
                 <Input
                     value={text}
                     readOnly
+                    style={{ width: '100%', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
                 />
             ),
         },
@@ -1517,6 +1560,11 @@ function EMediaROMaster() {
                 <Input
                     value={text}
                     onChange={(e) => handleItemChange(record.key, 'charges', e.target.value)}
+                    readOnly={record.bonusPaid === 'bonus'}
+                    style={{
+                        backgroundColor: record.bonusPaid === 'bonus' ? '#f0f0f0' : 'inherit',
+                        borderColor: record.bonusPaid === 'bonus' ? '#d9d9d9' : 'inherit'
+                    }}
                 />
             ),
         },
@@ -1541,6 +1589,7 @@ function EMediaROMaster() {
                 <Input
                     value={text}
                     readOnly
+                    style={{ width: '100%', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
                 />
             ),
         }
@@ -1641,15 +1690,15 @@ function EMediaROMaster() {
     useEffect(() => {
         const totalCharges = parseFloat(calculateTotalCharges()) || 0;
         const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
-        const robillamount = (totalCharges - commissionAmount).toFixed(2);
+        const robillamountBeforeGst = (totalCharges - commissionAmount).toFixed(2);
 
-        // Recalculate GST amounts if GST type is selected
+        // Only calculate GST if GST type is selected
         if (data.gstid) {
             const selectedGst = gsts.find(gst => gst.value === data.gstid);
             if (selectedGst) {
-                const cgstAmount = (totalCharges * selectedGst.cgstpercent / 100).toFixed(2);
-                const sgstAmount = (totalCharges * selectedGst.sgstpercent / 100).toFixed(2);
-                const igstAmount = (totalCharges * selectedGst.igstpercent / 100).toFixed(2);
+                const cgstAmount = (robillamountBeforeGst * selectedGst.cgstpercent / 100).toFixed(2);
+                const sgstAmount = (robillamountBeforeGst * selectedGst.sgstpercent / 100).toFixed(2);
+                const igstAmount = (robillamountBeforeGst * selectedGst.igstpercent / 100).toFixed(2);
 
                 form.setFieldsValue({
                     cgstamount: cgstAmount,
@@ -1657,22 +1706,24 @@ function EMediaROMaster() {
                     igstamount: igstAmount
                 });
 
-                setData(prev => ({
-                    ...prev,
-                    cgstamount: cgstAmount,
-                    sgstamount: sgstAmount,
-                    igstamount: igstAmount
-                }));
+                // Calculate final amount with GST
+                const finalAmount = (parseFloat(robillamountBeforeGst) +
+                    parseFloat(cgstAmount) +
+                    parseFloat(sgstAmount) +
+                    parseFloat(igstAmount));
+                form.setFieldsValue({ robillamount: finalAmount.toFixed(2) });
             }
+        } else {
+            // If no GST selected, just show amount before GST
+            form.setFieldsValue({ robillamount: robillamountBeforeGst });
         }
 
         form.setFieldsValue({
             totalspots: calculateTotalSpots(),
             totalcharges: totalCharges,
-            comissionamount: commissionAmount,
-            robillamount: robillamount
+            comissionamount: commissionAmount
         });
-    }, [items, form, data.comissionpercent, data.gstid]);
+    }, [items, form.getFieldValue('comissionpercent'), data.gstid]);
 
     return (
         <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
@@ -1708,7 +1759,7 @@ function EMediaROMaster() {
                         </Col>
                         <Col span={8}>
                             <Form.Item label="RO Date" name="rodate" style={{ marginBottom: '8px' }}>
-                                <DatePicker style={{ width: "50%" }} format="DD/MM/YYYY" />
+                                <DatePicker style={{ width: "50%", backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} format="DD/MM/YYYY" />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
@@ -1801,13 +1852,13 @@ function EMediaROMaster() {
                     <Row gutter={[8, 4]}>
                         <Col span={5}>
                             <Form.Item label="Total Spots" name="totalspots" style={{ marginBottom: '8px' }}>
-                                <Input style={{ width: '190px' }} placeholder='spot' value={calculateTotalSpots()}
+                                <Input style={{ width: '190px', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }} placeholder='spot' value={calculateTotalSpots()}
                                     readOnly />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
                             <Form.Item label="Total Charges" name="totalcharges" style={{ marginBottom: '8px' }}>
-                                <Input style={{ width: '180px' }} value={calculateTotalCharges()} readOnly />
+                                <Input style={{ width: '180px', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }} value={calculateTotalCharges()} readOnly />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
@@ -1822,7 +1873,7 @@ function EMediaROMaster() {
                         </Col>
                         <Col span={5}>
                             <Form.Item label="Comission Amount" name="comissionamount" style={{ marginBottom: '8px' }}>
-                                <Input style={{ width: '180px' }} readOnly />
+                                <Input style={{ width: '180px', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }} readOnly />
                             </Form.Item>
                         </Col>
                     </Row><br />
@@ -1897,7 +1948,7 @@ function EMediaROMaster() {
                         </Col>
                         <Col span={15}>
                             <Form.Item label="Instructions" name="instructions" style={{ marginBottom: '8px' }}>
-                                <Input.TextArea style={{ width: '500%', backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }} rows={1} />
+                                <Input.TextArea style={{ width: '500%' }} rows={1} />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -1914,7 +1965,7 @@ function EMediaROMaster() {
                             </Button>
                         </Col>
                         <Col>
-                            <Button type="default" danger icon={<CloseOutlined />} onClick={handleCancel}>
+                            <Button type="primary" danger icon={<CloseOutlined />} onClick={handleCancel}>
                                 Cancel
                             </Button>
                         </Col>

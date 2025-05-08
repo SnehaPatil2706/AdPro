@@ -102,11 +102,11 @@ function EMediaROList() {
         },
         { title: 'RO No', dataIndex: 'rono', key: 'roNo', width: 80 },
         { title: 'RO Date', dataIndex: 'rodate', key: 'roDate', width: 100 },
-        // { title: 'Invoice No', dataIndex: 'invoiceNo', key: 'invoiceNo', width: 80 },
-        // { title: 'Invoice Date', dataIndex: 'invoiceDate', key: 'invoiceDate', width: 100 },
+        { title: 'Invoice No', dataIndex: 'invoiceNo', key: 'invoiceNo', width: 80 },
+        { title: 'Invoice Date', dataIndex: 'invoiceDate', key: 'invoiceDate', width: 100 },
         { title: 'Client', dataIndex: 'clientid', key: 'client', width: 120 },
         { title: 'Publication', dataIndex: 'emediaid', key: 'publication', width: 120 },
-        { title: 'RO Amount', dataIndex: 'amount', key: 'amount', width: 80 },
+        { title: 'RO Amount', dataIndex: 'robillamount', key: 'amount', width: 80 },
         { title: 'Discount', dataIndex: 'discount', key: 'discount', width: 80 },
         { title: 'GST%', dataIndex: 'gstPercent', key: 'gstPercent', width: 80 },
         { title: 'Invoice Amount', dataIndex: 'billAmount', key: 'billAmount', width: 100 },
@@ -155,8 +155,7 @@ function EMediaROList() {
             setClients([]);
             return { emedias: [], clients: [] };
         });
-    }
-    
+    };  
 
     function loadROData(emediasList, clientsList) {
         setLoading(true);
@@ -172,7 +171,7 @@ function EMediaROList() {
                         amount: ro.amount,
                         discount: ro.discount,
                         gstPercent: ro.gstPercent,
-                        billAmount: ro.billAmount,
+                        robillamount: ro.robillamount,
                         paid: ro.paid,
                         remaining: ro.remaining,
                     }));
@@ -191,16 +190,14 @@ function EMediaROList() {
             .finally(() => {
                 setLoading(false);
             });
-    }
+    };
     
-
     useEffect(() => {
         loadData().then(({ emedias, clients }) => {
             loadROData(emedias, clients); // pass freshly loaded data
         });
     }, []);
     
-
     return (
         <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
             <div className="pagetitle">

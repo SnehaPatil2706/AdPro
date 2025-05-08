@@ -99,6 +99,8 @@ function EMediaROMaster() {
             prevItems.map(item => {
                 if (item.key === key) {
                     const updatedItem = { ...item, [field]: value };
+                    console.log(updatedItem);
+                    
 
                     // Automatically update 'days' when 'fromToDate' is selected
                     if (field === 'fromToDate' && value && value[0] && value[1]) {
@@ -131,9 +133,11 @@ function EMediaROMaster() {
                         const charges = parseFloat(updatedItem.charges) || 0;
                         const duration = parseFloat(updatedItem.duration) || 0;
                         const totalSpots = parseFloat(updatedItem.totalSpots) || 0;
+                      
 
                         // Calculate: (charges/10) * duration * totalSpots
                         updatedItem.totalCharges = ((charges / 10) * duration * totalSpots).toFixed(2);
+                        
                     }
 
                     return updatedItem;
@@ -160,6 +164,10 @@ function EMediaROMaster() {
     const calculateROBillAmount = (includeGst = false) => {
         const totalCharges = parseFloat(calculateTotalCharges()) || 0;
         const commissionAmount = parseFloat(calculateCommissionAmount()) || 0;
+
+        console.log(totalCharges);
+        console.log(commissionAmount);
+        
         let robillamount = (totalCharges - commissionAmount).toFixed(2);
 
         // Only apply GST if explicitly requested and GST type is selected
@@ -182,6 +190,8 @@ function EMediaROMaster() {
 
         // Get RO bill amount before GST
         const robillamountBeforeGst = calculateROBillAmount(false);
+        console.log(robillamountBeforeGst);
+        
 
         // Calculate GST amounts
         const cgstAmount = (robillamountBeforeGst * selectedGst.cgstpercent / 100).toFixed(2);
@@ -712,7 +722,14 @@ function EMediaROMaster() {
                                 <Input style={{ width: '180px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
                                     onChange={() => {
                                         // Update commission amount when percentage changes
-                                        form.setFieldsValue({ comissionamount: calculateCommissionAmount() });
+                                        // form.setFieldsValue({ comissionamount: calculateCommissionAmount() });
+                                        const commissionAmount = calculateCommissionAmount();
+                                        form.setFieldsValue({ 
+                                            comissionamount: commissionAmount,
+                                            // RO Bill Amount will be updated by calculateCommissionAmount
+                                        });
+                                        handleItemChange()
+                            
                                     }}
                                 />
                             </Form.Item>

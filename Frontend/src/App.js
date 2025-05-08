@@ -58,6 +58,7 @@ function App() {
           <Route path="emedia" element={<Landing />}>
             <Route path="emediaROList" element={<EMediaROList />} />
             <Route path="emediaROMaster" element={<EMediaROMaster />} />
+            <Route path="emediaROMaster/:id" element={<EMediaROMaster />} />
           </Route>
           <Route path="reports" element={<Landing />} >
             <Route path="rptInvoiceList" element={<InvoiceReport />} />

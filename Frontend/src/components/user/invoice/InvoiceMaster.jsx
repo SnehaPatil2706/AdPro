@@ -123,7 +123,6 @@ function InvoiceMaster() {
                             id: invoice._id, // Ensure the ID is set here
                             invoiceDate: dayjs(invoice.invoiceDate),
                         });
-
                         setIsEditMode(true);
                     } else {
                         message.error("Failed to fetch invoice data");
