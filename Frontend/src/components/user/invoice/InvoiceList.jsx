@@ -387,7 +387,7 @@ function InvoiceList() {
                             </Button>
                         </Col>
                         <Col>
-                            <Button danger onClick={onResetSearch} icon={<RedoOutlined />}>
+                            <Button danger type="primary" onClick={onResetSearch} icon={<RedoOutlined />}>
                                 RESET
                             </Button>
                         </Col>

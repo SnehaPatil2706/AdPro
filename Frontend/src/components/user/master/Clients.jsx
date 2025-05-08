@@ -286,7 +286,7 @@ function Clients() {
                     onClick={handleCancel}
                     danger
                     className="ms-1"
-                    type="default"
+                    type="primary"
                   >
                     Cancel
                   </Button>

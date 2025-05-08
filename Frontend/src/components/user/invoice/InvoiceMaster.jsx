@@ -475,7 +475,7 @@ function InvoiceMaster() {
                             </Button>
                         </Col>
                         <Col>
-                            <Button type="default" danger icon={<CloseOutlined />} onClick={handleCancel}>
+                            <Button type="primary" danger icon={<CloseOutlined />} onClick={handleCancel}>
                                 Cancel
                             </Button>
                         </Col>
