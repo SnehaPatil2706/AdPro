@@ -241,17 +241,6 @@ function InvoiceList() {
                                 style={{ padding: '4px 6px' }} // optional: fine-tune spacing
                             />
                         </Popconfirm>
-
-                        {/* <Button
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            style={{ background: '#ef4444', color: '#fff' }}
-                            onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this invoice?")) {
-                                    deleteInvoice(record.key);
-                                }
-                            }}
-                        /> */}
                     </div>
                     <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
 

@@ -36,6 +36,17 @@ router.get("/:agencyid/:id", async (req, res) => {
     }
 });
 
+// Get all records
+router.get("/", async (req, res) => {
+    try {
+        const result = await Client.find({});
+        res.json({ status: "success", data: result });
+    } catch (err) {
+        console.error("Error fetching all records:", err);
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
 router.post("/", async (req, res) => {
     try {
         const data = req.body;

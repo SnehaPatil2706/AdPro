@@ -23,6 +23,11 @@ import ClientListReport from './components/user/reports/ClientListReport';
 import HolidayListReport from './components/user/reports/HolidayListReport';
 import ClientAdsReport from './components/user/reports/ClientAdsReport';
 import EmployeeWorkReport from './components/user/reports/EmployeeWorkReport';
+import EMediaROBilling from './components/user/e-media/EMediaROBilling';
+import PMediaROList from './components/user/p-media/PMediaROList';
+import PMediaROMaster from './components/user/p-media/PMediaROMaster';
+import EMediaROPrint from './components/user/e-media/EMediaROPrint';
+import EMediaInvoicePayment from './components/user/e-media/EMediaInvoicePayment';
 
 function App() {
   return (
@@ -59,6 +64,18 @@ function App() {
             <Route path="emediaROList" element={<EMediaROList />} />
             <Route path="emediaROMaster" element={<EMediaROMaster />} />
             <Route path="emediaROMaster/:id" element={<EMediaROMaster />} />
+            <Route path='emediaROBilling/:id' element={<EMediaROBilling/>}/>
+            <Route path='emediaROBilling' element={<EMediaROBilling/>}/>
+            <Route path="emediaROPrint/:agencyid/:id" element={<EMediaROPrint />} />
+            <Route path="emediaInvoicePayment" element={<EMediaInvoicePayment/>}/>
+            <Route path="emediaInvoicePayment/:id" element={<EMediaInvoicePayment/>}/>
+          </Route>
+          <Route path="pmedia" element={<Landing />}>
+            <Route path="pmediaROList" element={<PMediaROList />} />
+            <Route path="pmediaROMaster" element={<PMediaROMaster />} />
+            <Route path="pmediaROMaster/:id" element={<PMediaROMaster />} />
+            {/* <Route path="pMediaROBilling/:id" element={<PMediaROBilling />} />
+            <Route path="pMediaROPrint/:agencyid/:id" element={<PMediaROPrint />} /> */}
           </Route>
           <Route path="reports" element={<Landing />} >
             <Route path="rptInvoiceList" element={<InvoiceReport />} />

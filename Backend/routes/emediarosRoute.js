@@ -39,6 +39,30 @@ router.get("/agency/:agencyid", async (req, res) => {
 });
 
 // Get a single record by ID
+// router.get("/:id", async (req, res) => {
+//     try {
+//         const { id } = req.params;
+
+//         if (!mongoose.isValidObjectId(id)) {
+//             return res.status(400).json({ status: "error", message: "Invalid ID" });
+//         }
+
+//         const object = await EMediaRO.findById(id)
+//             .populate("clientid")
+//             .populate("emediaid")
+//             .populate("gstid");
+
+//         if (!object) {
+//             return res.status(404).json({ status: "error", message: "Record not found" })
+//         }
+
+//         res.json({ status: "success", data: object });
+//     } catch (err) {
+//         console.error("Error fetching by ID:", err);
+//         res.status(500).json({ status: "error", message: err.message });
+//     }
+// });
+
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -47,7 +71,11 @@ router.get("/:id", async (req, res) => {
             return res.status(400).json({ status: "error", message: "Invalid ID" });
         }
 
-        const object = await EMediaRO.findById(id);
+        const object = await EMediaRO.findById(id)
+            .populate("clientid")
+            .populate("emediaid")
+            .populate("gstid");
+
         if (!object) {
             return res.status(404).json({ status: "error", message: "Record not found" });
         }
@@ -59,11 +87,12 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+
 // Create a new record
 router.post("/", async (req, res) => {
     try {
         // console.log(req.body); // Log the request body for debugging
-        
+
         const data = req.body;
         const object = await EMediaRO.create(data);
         res.json({ status: "success", data: object });

@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const itemSchema = new mongoose.Schema({
     fromToDate: [{
         type: Date,
-        required: true
     }], // Array of dates for the range
     days: {
         type: Number,
@@ -28,11 +27,9 @@ const itemSchema = new mongoose.Schema({
     bonusPaid: {
         type: String,
         enum: ['paid', 'bonus'], // Only allow these two values
-        required: true
     },
     caption: {
         type: String,
-        required: true
     },
     charges: {
         type: Number,
@@ -61,6 +58,8 @@ const schema = new mongoose.Schema({
             message: 'Invalid RO date',
         },
     },
+    mediabillno: { type: Number },
+    mediabillamount: { type: Number },
     clientid: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' }, // Reference to Client model
     emediaid: { type: mongoose.Schema.Types.ObjectId, ref: 'EMedia' }, // Reference to EMedia model
     centers: { type: String },
@@ -85,8 +84,8 @@ const schema = new mongoose.Schema({
     bankname: { type: String },
     robillamount: { type: Number },
     instructions: { type: String },
-    gstid: { type: mongoose.Schema.Types.ObjectId, ref: 'Gst' }, // Reference to Gst model
-    cgstpercent: { type: Number, default: 0 }, // CGST percentage
+    gstid: { type: mongoose.Schema.Types.ObjectId, ref: 'gst' }, // Reference to Gst model
+    cgstpercent: { type: Number, default: 0 },
     cgstamount: { type: Number, default: 0 },
     sgstpercent: { type: Number, default: 0 }, // CGST percentage
     sgstamount: { type: Number, default: 0 },

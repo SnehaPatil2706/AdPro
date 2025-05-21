@@ -87,6 +87,13 @@ function Sidebar() {
         </li>
 
         <li class="nav-item">
+          <Link class="nav-link " to={"/pmedia/pmediaROList"}>
+            <i class="bi bi-grid"></i>
+            <span>P-Media RO</span>
+          </Link>
+        </li>
+
+        <li class="nav-item">
           <Link class="nav-link " to={"/invoice/invoiceList"}>
             <i class="bi bi-grid"></i>
             <span>Design & Printing Invoice</span>

@@ -100,7 +100,7 @@ function EMediaROMaster() {
                 if (item.key === key) {
                     const updatedItem = { ...item, [field]: value };
                     console.log(updatedItem);
-                    
+
 
                     // Automatically update 'days' when 'fromToDate' is selected
                     if (field === 'fromToDate' && value && value[0] && value[1]) {
@@ -133,11 +133,11 @@ function EMediaROMaster() {
                         const charges = parseFloat(updatedItem.charges) || 0;
                         const duration = parseFloat(updatedItem.duration) || 0;
                         const totalSpots = parseFloat(updatedItem.totalSpots) || 0;
-                      
+
 
                         // Calculate: (charges/10) * duration * totalSpots
                         updatedItem.totalCharges = ((charges / 10) * duration * totalSpots).toFixed(2);
-                        
+
                     }
 
                     return updatedItem;
@@ -167,7 +167,7 @@ function EMediaROMaster() {
 
         console.log(totalCharges);
         console.log(commissionAmount);
-        
+
         let robillamount = (totalCharges - commissionAmount).toFixed(2);
 
         // Only apply GST if explicitly requested and GST type is selected
@@ -191,7 +191,7 @@ function EMediaROMaster() {
         // Get RO bill amount before GST
         const robillamountBeforeGst = calculateROBillAmount(false);
         console.log(robillamountBeforeGst);
-        
+
 
         // Calculate GST amounts
         const cgstAmount = (robillamountBeforeGst * selectedGst.cgstpercent / 100).toFixed(2);
@@ -499,7 +499,7 @@ function EMediaROMaster() {
             .catch((err) => {
                 console.error("Error fetching gsts:", err);
             });
-    }
+    };
 
     useEffect(() => {
         loadData();
@@ -508,6 +508,8 @@ function EMediaROMaster() {
             axios.get(`http://localhost:8081/emediaros/${id}`)
                 .then(res => {
                     const data = res.data.data;
+                    console.log(data);
+
                     if (data) {
                         form.setFieldsValue({
                             ...data,
@@ -518,8 +520,12 @@ function EMediaROMaster() {
                             igstpercent: data.igstpercent || 0,
                             cgstamount: data.cgstamount || 0,
                             sgstamount: data.sgstamount || 0,
-                            igstamount: data.igstamount || 0
+                            igstamount: data.igstamount || 0,
+                            clientid: data.clientid?._id || null,
+                            emediaid: data.emediaid?._id || null,
+                            gstid: data.gstid?._id || null,
                         });
+
                         setData(prev => ({
                             ...prev,
                             cgstpercent: data.cgstpercent || 0,
@@ -620,6 +626,10 @@ function EMediaROMaster() {
                         </Col>
                         <Col span={8}>
                             <Form.Item label="Client" name="clientid" style={{ marginBottom: '8px' }}>
+                                {/* {
+                                    console.log(clients[0].label)
+                                    
+                                } */}
                                 <Select
                                     showSearch
                                     allowClear
@@ -634,12 +644,12 @@ function EMediaROMaster() {
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Media Bill No" name="billNo" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Media Bill No" name="mediabillno" style={{ marginBottom: '8px' }}>
                                 <Input placeholder="Enter media bill number" style={{ width: '200px' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Media Bill Amount" name="billAmount" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Media Bill Amount" name="mediabillamount" style={{ marginBottom: '8px' }}>
                                 <Input placeholder="Enter media bill amount" style={{ width: '200px' }} />
                             </Form.Item>
                         </Col>
@@ -724,12 +734,12 @@ function EMediaROMaster() {
                                         // Update commission amount when percentage changes
                                         // form.setFieldsValue({ comissionamount: calculateCommissionAmount() });
                                         const commissionAmount = calculateCommissionAmount();
-                                        form.setFieldsValue({ 
+                                        form.setFieldsValue({
                                             comissionamount: commissionAmount,
                                             // RO Bill Amount will be updated by calculateCommissionAmount
                                         });
                                         handleItemChange()
-                            
+
                                     }}
                                 />
                             </Form.Item>

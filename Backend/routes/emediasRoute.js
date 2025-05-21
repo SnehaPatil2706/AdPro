@@ -11,15 +11,28 @@ router.get("/", async (req, res) => {
     }
 });
 
-router.get("/:id", async (req, res) => {
-    try {
-        const id = req.params.id;
-        let object = await EMedia.findById(id);
-        res.json({ status: "success", data: object });
-    } catch (err) {
-        res.json({ status: "error", data: err });
+// router.get("/:id", async (req, res) => {
+//     try {
+//         const id = req.params.id;
+//         let object = await EMedia.findById(id);
+//         res.json({ status: "success", data: object });
+//     } catch (err) {
+//         res.json({ status: "error", data: err });
+//     }
+// });
+
+router.get('/:id', async (req, res) => {
+  try {
+    const emedia = await EMedia.findById(req.params.id);
+    if (!emedia) {
+      return res.status(404).json({ status: 'error', message: 'Record not found' });
     }
+    res.json({ status: 'success', data: emedia });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
 });
+
 
 router.post("/", async (req, res) => {
     try {

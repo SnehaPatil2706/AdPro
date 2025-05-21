@@ -10,5 +10,5 @@ let schema = new mongoose.Schema({
 
 });
 
-let GST = mongoose.model("gsts", schema);
+let GST = mongoose.model("gst", schema);
 module.exports = GST;

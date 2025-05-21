@@ -10,5 +10,6 @@ let schema = new mongoose.Schema({
 
 });
 
-let EMedia = mongoose.model("emedias", schema);
+// let EMedia = mongoose.model("emedias", schema);
+let EMedia = mongoose.model("EMedia", schema);
 module.exports = EMedia;
