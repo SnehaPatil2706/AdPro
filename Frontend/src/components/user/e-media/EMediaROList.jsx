@@ -49,11 +49,11 @@ function EMediaROList() {
             key: 'actions',
             width: 100,
             render: (_, record) => (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start' }}>
                     <div style={{ display: 'flex', gap: '4px' }}>
                         <Tooltip title="Click to edit"
                             overlayInnerStyle={{
-                                backgroundColor: '#3b82f6', // Yellow background
+                                backgroundColor: '#3b82f6',
                             }}>
                             <Button
                                 size="small"
@@ -64,7 +64,7 @@ function EMediaROList() {
                         </Tooltip>
                         <Tooltip title="Click to delete"
                             overlayInnerStyle={{
-                                backgroundColor: '#ef4444', // Yellow background
+                                backgroundColor: '#ef4444',
                             }}>
                             <Popconfirm
                                 title="Are you sure to delete this RO?"
@@ -80,10 +80,10 @@ function EMediaROList() {
                             </Popconfirm>
                         </Tooltip>
                     </div>
-                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px', alignItems: 'center' }}>
                         <Tooltip title="Click to print"
                             overlayInnerStyle={{
-                                backgroundColor: '#22c55e', // Yellow background
+                                backgroundColor: '#22c55e',
                             }}>
                             <Button
                                 size="small"
@@ -92,86 +92,88 @@ function EMediaROList() {
                                 onClick={() => handlePrint(record.key)}
                             />
                         </Tooltip>
-                        <Tooltip title="Click to add / view packages and payment transactions"
-                            overlayInnerStyle={{
-                                backgroundColor: '#be185d', // Yellow background
-                            }}>
-                            <Button
-                                size="small"
-                                icon={<DollarOutlined />}
-                                style={{ background: '#be185d', color: '#fff' }}
-                                onClick={() => navigate(`/emedia/emediaInvoicePayment/${record.key}`)}
-                            />
-                        </Tooltip>
+                        {record.remaining !== '' && record.remaining !== null && record.remaining !== undefined && (
+                            <Tooltip title="Click to add / view packages and payment transactions"
+                                overlayInnerStyle={{
+                                    backgroundColor: '#be185d',
+                                }}>
+                                <Button
+                                    size="small"
+                                    icon={<DollarOutlined />}
+                                    style={{ background: '#be185d', color: '#fff' }}
+                                    onClick={() => navigate(`/emedia/emediaInvoicePayment/${record.key}`)}
+                                />
+                            </Tooltip>
+                        )}
                     </div>
                 </div >
             ),
         },
         {
-    title: 'RO No',
-    dataIndex: 'rono',
-    key: 'roNo',
-    width: 80,
-    onCell: (record) => {
-        // Determine background and font color
-        let bgColor = '#ff0000'; // Default red
-        let fontColor = '#ffffff'; // Default white
+            title: 'RO No',
+            dataIndex: 'rono',
+            key: 'roNo',
+            width: 80,
+            onCell: (record) => {
+                // Determine background and font color
+                let bgColor = '#ff0000'; // Default red
+                let fontColor = '#ffffff'; // Default white
 
-        if (record.remaining === '0.00') {
-            bgColor = '#008000'; // Green
-            fontColor = '#ffffff'; // White on green
-        } else if (record.invoiceno) {
-            bgColor = '#ffb6d1'; // Pink
-            fontColor = '#000000'; // Black on pink
-        }
+                if (record.remaining === '0.00') {
+                    bgColor = '#008000'; // Green
+                    fontColor = '#ffffff'; // White on green
+                } else if (record.invoiceno) {
+                    bgColor = '#ffb6d1'; // Pink
+                    fontColor = '#000000'; // Black on pink
+                }
 
-        return {
-            style: {
-                backgroundColor: bgColor,
-                color: fontColor,
-                textAlign: 'center',
-                padding: '4px'
+                return {
+                    style: {
+                        backgroundColor: bgColor,
+                        color: fontColor,
+                        textAlign: 'center',
+                        padding: '4px'
+                    }
+                };
+            },
+            render: (text, record) => {
+                // Match the font color logic from onCell
+                let fontColor = '#ffffff';
+                if (record.remaining === '0.00') {
+                    fontColor = '#ffffff';
+                } else if (record.invoiceno) {
+                    fontColor = '#000000';
+                }
+                return (
+                    <div>
+                        <div style={{ color: fontColor }}>{text}</div>
+                        <Tooltip title="Click to go to billing"
+                            overlayInnerStyle={{
+                                backgroundColor: '#ffcc00',
+                            }}>
+                            <button
+                                style={{
+                                    marginTop: '4px',
+                                    backgroundColor: '#ffcc00',
+                                    color: '#ffffff',
+                                    fontStyle: 'italic',
+                                    textTransform: 'lowercase',
+                                    fontWeight: 'bold',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px'
+                                }}
+                                onClick={() => navigate(`/emedia/emediaROBilling/${record.key}`)}
+                            >
+                                billing
+                            </button>
+                        </Tooltip>
+                    </div>
+                );
             }
-        };
-    },
-    render: (text, record) => {
-        // Match the font color logic from onCell
-        let fontColor = '#ffffff';
-        if (record.remaining === '0.00') {
-            fontColor = '#ffffff';
-        } else if (record.invoiceno) {
-            fontColor = '#000000';
-        }
-        return (
-            <div>
-                <div style={{ color: fontColor }}>{text}</div>
-                <Tooltip title="Click to go to billing"
-                    overlayInnerStyle={{
-                        backgroundColor: '#ffcc00',
-                    }}>
-                    <button
-                        style={{
-                            marginTop: '4px',
-                            backgroundColor: '#ffcc00',
-                            color: '#ffffff',
-                            fontStyle: 'italic',
-                            textTransform: 'lowercase',
-                            fontWeight: 'bold',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '2px 6px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                        }}
-                        onClick={() => navigate(`/emedia/emediaROBilling/${record.key}`)}
-                    >
-                        billing
-                    </button>
-                </Tooltip>
-            </div>
-        );
-    }
-},
+        },
         { title: 'RO Date', dataIndex: 'rodate', key: 'roDate', width: 100 },
         { title: 'Invoice No', dataIndex: 'invoiceno', key: 'invoiceNo', width: 80 },
         { title: 'Invoice Date', dataIndex: 'invoicedate', key: 'invoiceDate', width: 100 },
