@@ -511,8 +511,19 @@ function EMediaROMaster() {
                     console.log(data);
 
                     if (data) {
+                        // Normalize language value
+                        let languageValue = data.language;
+                        if (languageValue) {
+                            const found = languageOptions.find(
+                                opt =>
+                                    opt.label.toLowerCase() === languageValue.toLowerCase() ||
+                                    opt.value === languageValue.toLowerCase()
+                            );
+                            languageValue = found ? found.value : undefined;
+                        }
                         form.setFieldsValue({
                             ...data,
+                            language: languageValue,
                             rodate: data.rodate ? moment(data.rodate) : null,
                             chequedate: data.chequedate ? moment(data.chequedate) : null,
                             cgstpercent: data.cgstpercent || 0,

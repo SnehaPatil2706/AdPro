@@ -25,6 +25,7 @@ const schema = new mongoose.Schema({
     discountamount: { type: Number },
     taxableamount: { type: Number },
     invoicegstid: { type: mongoose.Schema.Types.ObjectId, ref: 'gst' }, // Reference to Gst model
+    icgstpercent: { type: Number, default: 0 },
     icgstamount: { type: Number, default: 0 },
     isgstpercent: { type: Number, default: 0 }, // CGST percentage
     isgstamount: { type: Number, default: 0 },

@@ -86,10 +86,10 @@ function EMediaROBilling() {
             res.data.data.map((gst) => ({
               label: gst.title,
               value: gst._id,
-              
-          cgstpercent: gst.cgstpercent,
-          sgstpercent: gst.sgstpercent,
-          igstpercent: gst.igstpercent
+
+              cgstpercent: gst.cgstpercent,
+              sgstpercent: gst.sgstpercent,
+              igstpercent: gst.igstpercent
             }))
           );
         }
@@ -166,17 +166,34 @@ function EMediaROBilling() {
     axios.get(`http://localhost:8081/emediaroinvoices/by-ro/${id}`)
       .then(res => {
         if (res.data && res.data.status === 'success' && res.data.data.length > 0) {
-          const invoiceData = res.data.data[0]; // Get the first invoice from the array
+          const invoiceData = res.data.data[0];
           setRoInvoices(invoiceData);
+          console.log("Invoice Data:", invoiceData);
 
-          // Format the date properly for the DatePicker
           const formattedData = {
             ...invoiceData,
-            invoicedate: invoiceData.invoicedate ? dayjs(invoiceData.invoicedate) : null
+            invoicedate: invoiceData.invoicedate ? dayjs(invoiceData.invoicedate) : null,
+            icgstpercent: invoiceData.icgstpercent || 0,
+            isgstpercent: invoiceData.isgstpercent || 0,
+            iigstpercent: invoiceData.iigstpercent || 0,
+            icgstamount: invoiceData.icgstamount || 0,
+            isgstamount: invoiceData.isgstamount || 0,
+            iigstamount: invoiceData.iigstamount || 0,
           };
 
-          // Set form values
           form.setFieldsValue(formattedData);
+
+
+          // Also update data state for label display
+          setData(prev => ({
+            ...prev,
+            icgstpercent: invoiceData.icgstpercent || 0,
+            isgstpercent: invoiceData.isgstpercent || 0,
+            iigstpercent: invoiceData.iigstpercent || 0,
+            icgstamount: invoiceData.icgstamount || 0,
+            isgstamount: invoiceData.isgstamount || 0,
+            iigstamount: invoiceData.iigstamount || 0,
+          }));
 
         } else {
           message.info("No invoice found for this RO");
@@ -186,6 +203,7 @@ function EMediaROBilling() {
         console.error("Error fetching RO invoices:", err);
         setRoInvoices(null);
       });
+
   };
 
   const columns = [
@@ -301,9 +319,29 @@ function EMediaROBilling() {
       dataIndex: "charges",
       key: "charges",
       width: 140,
-      render: (text, record) => (
+      render: (text, record, index) => (
         <Input
           value={text}
+          onChange={e => {
+            const newItems = [...items];
+            const charges = parseFloat(e.target.value) || 0;
+            const duration = parseFloat(newItems[index].duration) || 0;
+            const totalSpots = parseFloat(newItems[index].totalSpots) || 0;
+            newItems[index].charges = e.target.value;
+            // Calculate totalCharges using the formula
+            newItems[index].totalCharges = ((charges / 10) * duration * totalSpots).toFixed(2);
+            setItems(newItems);
+
+            // --- NEW: Sum all totalCharges and update form field ---
+            const totalChargesSum = newItems.reduce(
+              (sum, item) => sum + (parseFloat(item.totalCharges) || 0),
+              0
+            );
+            form.setFieldsValue({ totalcharges: totalChargesSum.toFixed(2) });
+
+            // --- NEW: Trigger full calculation chain ---
+            handleCommissionOrTotalChargesChange();
+          }}
           style={{
             backgroundColor: record.bonusPaid === 'bonus' ? '#f0f0f0' : 'inherit',
             borderColor: record.bonusPaid === 'bonus' ? '#d9d9d9' : 'inherit'
@@ -311,6 +349,7 @@ function EMediaROBilling() {
         />
       ),
     },
+
     {
       title: "Duration(in sec)",
       dataIndex: "duration",
@@ -405,7 +444,79 @@ function EMediaROBilling() {
     return gstAmount.toFixed(2);
   };
 
-  // Handler to update all related fields
+  // --- Place these functions above your component or inside it before use ---
+
+  // Helper to recalculate GST and invoice amount
+  const recalculateGST = (taxableAmount) => {
+    const taxable = parseFloat(taxableAmount) || 0;
+    const icgstPercent = parseFloat(form.getFieldValue('icgstpercent')) || 0;
+    const isgstPercent = parseFloat(form.getFieldValue('isgstpercent')) || 0;
+    const iigstPercent = parseFloat(form.getFieldValue('iigstpercent')) || 0;
+
+    const icgstAmount = ((taxable * icgstPercent) / 100).toFixed(2);
+    const isgstAmount = ((taxable * isgstPercent) / 100).toFixed(2);
+    const iigstAmount = ((taxable * iigstPercent) / 100).toFixed(2);
+
+    const invoiceAmount = (
+      taxable +
+      parseFloat(icgstAmount) +
+      parseFloat(isgstAmount) +
+      parseFloat(iigstAmount)
+    ).toFixed(2);
+
+    form.setFieldsValue({
+      icgstamount: icgstAmount,
+      isgstamount: isgstAmount,
+      iigstamount: iigstAmount,
+      invoiceamount: invoiceAmount
+    });
+
+    setData(prev => ({
+      ...prev,
+      icgstamount: icgstAmount,
+      isgstamount: isgstAmount,
+      iigstamount: iigstAmount
+    }));
+  };
+
+  // Update the discount handler to trigger GST recalculation
+  const handleDiscountPercentChange = () => {
+    const robillamount = parseFloat(form.getFieldValue('robillamount')) || 0;
+    const discountPercent = parseFloat(form.getFieldValue('discountpercent')) || 0;
+    const discountAmount = ((robillamount * discountPercent) / 100).toFixed(2);
+    const taxable = (robillamount - discountAmount).toFixed(2);
+
+    form.setFieldsValue({
+      discountamount: discountAmount,
+      taxableamount: taxable,
+    });
+
+    // Trigger GST recalculation after discount changes
+    recalculateGST(taxable);
+  };
+
+  // Update GST type handler to set new percentages and recalculate GST
+  const handleInvoiceGSTTypeChange = (value) => {
+    const selectedGST = gsts.find((gst) => gst.value === value);
+    if (!selectedGST) return;
+
+    const taxableamount = parseFloat(form.getFieldValue('taxableamount')) || 0;
+
+    const updates = {
+      invoicegstid: value,
+      icgstpercent: selectedGST.cgstpercent || 0,
+      isgstpercent: selectedGST.sgstpercent || 0,
+      iigstpercent: selectedGST.igstpercent || 0,
+    };
+
+    setData(prev => ({ ...prev, ...updates }));
+    form.setFieldsValue(updates);
+
+    // Recalculate GST amounts with new percentages
+    recalculateGST(taxableamount);
+  };
+
+  // Update commission/charges handler to flow through all calculations
   const handleCommissionOrTotalChargesChange = () => {
     const totalCharges = parseFloat(form.getFieldValue('totalcharges')) || 0;
     const percent = parseFloat(form.getFieldValue('icomissionpercent')) || 0;
@@ -415,9 +526,6 @@ function EMediaROBilling() {
     if (percent > 0) {
       commission = calculateCommissionAmount(totalCharges, percent);
       netTotalCharges = calculateNetTotalCharges(totalCharges, commission);
-    } else {
-      commission = 0;
-      netTotalCharges = totalCharges;
     }
 
     const cgst = parseFloat(form.getFieldValue('cgstpercent')) || 0;
@@ -425,81 +533,18 @@ function EMediaROBilling() {
     const igst = parseFloat(form.getFieldValue('igstpercent')) || 0;
     const gstAmount = parseFloat(calculateGSTAmount(netTotalCharges, cgst, sgst, igst)) || 0;
 
-    // Calculate RO Billed Amount as netTotalCharges + gstAmount
     const robillamount = (parseFloat(netTotalCharges) + gstAmount).toFixed(2);
 
     form.setFieldsValue({
       icomissionamount: commission,
       gstamount: gstAmount.toFixed(2),
       robillamount: robillamount,
-      taxableamount: robillamount,
-      invoiceamount: robillamount
+      taxableamount: robillamount // This will trigger discount and GST recalculations
     });
+
+    // Trigger discount and GST recalculations
+    handleDiscountPercentChange();
   };
-
-  const calculateDiscountAmount = (robillamount, discountPercent) => {
-    return ((parseFloat(robillamount) || 0) * (parseFloat(discountPercent) || 0) / 100).toFixed(2);
-  };
-
-  const handleDiscountPercentChange = () => {
-    const robillamount = parseFloat(form.getFieldValue('robillamount')) || 0;
-    const discountPercent = parseFloat(form.getFieldValue('discountpercent')) || 0;
-    const discountAmount = calculateDiscountAmount(robillamount, discountPercent);
-    const taxable = (robillamount - discountAmount).toFixed(2);
-
-    form.setFieldsValue({
-      discountamount: discountAmount,
-      taxableamount: taxable,
-      invoiceamount: taxable
-    });
-  };
-
-  const handleInvoiceGSTTypeChange = (value) => {
-  const selectedGST = gsts.find((gst) => gst.value === value);
-  if (!selectedGST) return;
-
-  const taxableamount = parseFloat(form.getFieldValue('taxableamount')) || 0;
-
-  // Use the correct field names from your GST master
-  const icgstPercent = selectedGST.cgstpercent || 0;
-  const isgstPercent = selectedGST.sgstpercent || 0;
-  const iigstPercent = selectedGST.igstpercent || 0;
-
-  const icgstAmount = ((taxableamount * icgstPercent) / 100).toFixed(2);
-  const isgstAmount = ((taxableamount * isgstPercent) / 100).toFixed(2);
-  const iigstAmount = ((taxableamount * iigstPercent) / 100).toFixed(2);
-  
-
-  setData((prev) => ({
-    ...prev,
-    invoicegstid: value,
-    icgstpercent: icgstPercent,
-    isgstpercent: isgstPercent,
-    iigstpercent: iigstPercent,
-    icgstamount: icgstAmount,
-    isgstamount: isgstAmount,
-    iigstamount: iigstAmount
-  }));
-
-  form.setFieldsValue({
-    invoicegstid: value,
-    icgstpercent: icgstPercent,
-    isgstpercent: isgstPercent,
-    iigstpercent: iigstPercent,
-    icgstamount: icgstAmount,
-    isgstamount: isgstAmount,
-    iigstamount: iigstAmount
-  });
-
-  // Calculate invoice bill amount with GST
-  const invoiceAmount = (
-    taxableamount +
-    parseFloat(icgstAmount) +
-    parseFloat(isgstAmount) +
-    parseFloat(iigstAmount)
-  );
-  form.setFieldsValue({ invoiceamount: invoiceAmount.toFixed(2) });
-};
 
   useEffect(() => {
     loadData();
@@ -737,17 +782,17 @@ function EMediaROBilling() {
                 </Col>
                 <Col span={5}>
                   <Form.Item label={`CGST (${data.icgstpercent}%)`} name="icgstamount" style={{ marginBottom: '8px' }} >
-                    <Input style={{ width: '100%' }} />
+                    <Input style={{ width: '100%' }} readOnly />
                   </Form.Item>
                 </Col>
                 <Col span={5}>
                   <Form.Item label={`SGST (${data.isgstpercent}%)`} name="isgstamount" style={{ marginBottom: '8px' }}>
-                    <Input style={{ width: '100%' }} />
+                    <Input style={{ width: '100%' }} readOnly />
                   </Form.Item>
                 </Col>
                 <Col span={5}>
                   <Form.Item label={`IGST (${data.iigstpercent}%)`} name="iigstamount" style={{ marginBottom: '8px' }}>
-                    <Input style={{ width: '100%' }} />
+                    <Input style={{ width: '100%' }} readOnly />
                   </Form.Item>
                 </Col>
               </Row>

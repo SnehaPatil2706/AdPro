@@ -67,6 +67,7 @@ function App() {
             <Route path='emediaROBilling/:id' element={<EMediaROBilling/>}/>
             <Route path='emediaROBilling' element={<EMediaROBilling/>}/>
             <Route path="emediaROPrint/:agencyid/:id" element={<EMediaROPrint />} />
+            <Route path="emediaROPrint/:id" element={<EMediaROPrint />} />
             <Route path="emediaInvoicePayment" element={<EMediaInvoicePayment/>}/>
             <Route path="emediaInvoicePayment/:id" element={<EMediaInvoicePayment/>}/>
           </Route>
