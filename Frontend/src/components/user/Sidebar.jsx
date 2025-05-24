@@ -130,6 +130,12 @@ function Sidebar() {
             class="nav-content collapse "
             data-bs-parent="#sidebar-nav"
           >
+            <li>
+              <Link to={"/reports/rptEMediaROList"}>
+                <i class="bi bi-circle"></i>
+                <span>E-Media RO List</span>
+              </Link>
+            </li>
 
             <li>
               <Link to={"/reports/rptInvoiceList"}>

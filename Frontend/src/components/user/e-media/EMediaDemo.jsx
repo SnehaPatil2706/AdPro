@@ -883,9 +883,105 @@
 //     const [originalData, setOriginalData] = useState([]);
 //     const [emedias, setEmedias] = useState([]);
 //     const [clients, setClients] = useState([]);
+//     const [fromDate, setFromDate] = useState(null);
+//     const [toDate, setToDate] = useState(null);
+//     const [client, setClient] = useState(null);
+
+//     // const onSearch = (values) => {
+//     //     let filtered = [...originalData];
+
+//     //     // Filter by client if selected
+//     //     if (values.clientid) {
+//     //         filtered = filtered.filter(item => item.clientid === clients.find(c => c.value === values.clientid)?.label);
+//     //     }
+
+//     //     // Filter by publication if selected
+//     //     if (values.publication) {
+//     //         filtered = filtered.filter(item => item.emediaid === emedias.find(e => e.value === values.publication)?.label);
+//     //     }
+//     //     setDataSource(filtered);
+//     // };
+
 
 //     const onSearch = (values) => {
 //         let filtered = [...originalData];
+
+//         // Filter by client if selected
+//         if (values.clientid) {
+//             const clientObj = clients.find(c => c.value === values.clientid);
+//             if (clientObj) {
+//                 filtered = filtered.filter(e => e.clientid === clientObj.label);
+//             } else {
+//                 message.warning("Selected client not found");
+//             }
+//         }
+
+//         // Filter by publication if selected
+//         if (values.publication) {
+//             const emediaObj = emedias.find(e => e.value === values.publication);
+//             if (emediaObj) {
+//                 filtered = filtered.filter(e => e.emediaid === emediaObj.label);
+//             } else {
+//                 message.warning("Selected publication not found");
+//             }
+//         }
+
+//         // Filter by status if selected
+//         if (values.status && values.status !== "all") {
+//             if (values.status === "not_billed") {
+//                 filtered = filtered.filter(e => !e.invoiceno);
+//             } else if (values.status === "billed") {
+//                 filtered = filtered.filter(e => e.invoiceno);
+//             } else if (values.status === "cancelled") {
+//                 // Add your cancelled status logic here
+//             }
+//         }
+
+//         // Filter by pay status if selected
+//         if (values.paystatus && values.paystatus !== "all") {
+//             if (values.paystatus === "not_paid") {
+//                 filtered = filtered.filter(e => e.remaining === e.invoiceamount);
+//             } else if (values.paystatus === "partially") {
+//                 filtered = filtered.filter(e => e.remaining > 0 && e.remaining < e.invoiceamount);
+//             } else if (values.paystatus === "fully") {
+//                 filtered = filtered.filter(e => e.remaining === "0.00");
+//             }
+//         }
+
+//         // Date range filtering
+//         if (values.fromDate || values.toDate) {
+//             // Convert form dates to Date objects at start of day
+//             const from = values.fromDate ? new Date(values.fromDate).setHours(0, 0, 0, 0) : null;
+//             const to = values.toDate ? new Date(values.toDate).setHours(0, 0, 0, 0) : null;
+
+//             filtered = filtered.filter(e => {
+//                 try {
+//                     // Parse the rodate string (DD/MM/YYYY format)
+//                     const [day, month, year] = e.rodate.split('/');
+//                     const roDate = new Date(`${year}-${month}-${day}`).setHours(0, 0, 0, 0);
+
+//                     // Check date range
+//                     const afterFrom = from ? roDate >= from : true;
+//                     const beforeTo = to ? roDate <= to : true;
+
+//                     return afterFrom && beforeTo;
+//                 } catch (error) {
+//                     console.error('Error parsing date:', e.rodate, error);
+//                     return false;
+//                 }
+//             });
+//         }
+
+//         // Filter by RO No or Invoice No if searchNo is provided
+//         if (values.searchNo && values.searchNo.trim() !== "") {
+//             const searchVal = values.searchNo.trim().toLowerCase();
+//             filtered = filtered.filter(e => {
+//                 const rono = (e.rono || '').toString().toLowerCase();
+//                 const invoiceno = (e.invoiceno || '').toString().toLowerCase();
+//                 return rono.includes(searchVal) || invoiceno.includes(searchVal);
+//             });
+//         }
+
 //         setDataSource(filtered);
 //     };
 
@@ -955,7 +1051,7 @@
 //                                 size="small"
 //                                 icon={<PrinterOutlined />}
 //                                 style={{ background: '#22c55e', color: '#fff' }}
-//                                 onClick={() => handlePrint(record.key)}
+//                                 onClick={() => navigate(`/emedia/emediaROPrint/${record.key}`)}
 //                             />
 //                         </Tooltip>
 //                         {record.remaining !== '' && record.remaining !== null && record.remaining !== undefined && (
@@ -1255,7 +1351,7 @@
 //                             </Form.Item>
 //                         </Col>
 //                         <Col span={8}>
-//                             <Form.Item label="PAY STATUS" name="pay status" style={{ marginBottom: '8px' }} >
+//                             <Form.Item label="PAY STATUS" name="paystatus" style={{ marginBottom: '8px' }} >
 //                                 <Select
 //                                     showSearch
 //                                     allowClear
@@ -1270,12 +1366,12 @@
 //                             </Form.Item>
 //                         </Col>
 //                         <Col span={8}>
-//                             <Form.Item label="SEARCH RO/INVOICE NO" name="pay status" style={{ marginBottom: '8px' }} >
+//                             <Form.Item label="SEARCH RO/INVOICE NO" name="searchNo" style={{ marginBottom: '8px' }} >
 //                                 <Input.Search
 //                                     placeholder="Search..."
 //                                     disabled={loading}
 //                                     style={{ width: '100%' }}
-//                                     onSearch={(value) => console.log(value)} // Add your search handler here
+//                                     // Remove onSearch here, filtering is handled on form submit
 //                                     enterButton
 //                                 />
 //                             </Form.Item>
@@ -1295,7 +1391,7 @@
 //                     </Row>
 //                     <Row justify="start" gutter={16}>
 //                         <Col>
-//                             <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+//                             <Button type="primary" style={{ backgroundColor: '#7fdbff', color: '#000' }} htmlType="submit" icon={<SearchOutlined />} >
 //                                 SHOW
 //                             </Button>
 //                         </Col>
@@ -1339,6 +1435,7 @@
 // };
 
 // export default EMediaROList;
+
 
 
 

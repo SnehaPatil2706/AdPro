@@ -145,7 +145,7 @@ const InvoiceReport = () => {
       </Row>
 
       <Title level={5} style={{ textAlign: 'center' }}>DESIGN AND PRINTING INVOICE REPORT</Title>
-      <Text type="danger" style={{ float: 'right' }}>
+      <Text type="danger" style={{ float: 'left' }}>
         Total records: {invoiceData.length}
       </Text>
 

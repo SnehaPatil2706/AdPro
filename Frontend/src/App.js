@@ -28,6 +28,7 @@ import PMediaROList from './components/user/p-media/PMediaROList';
 import PMediaROMaster from './components/user/p-media/PMediaROMaster';
 import EMediaROPrint from './components/user/e-media/EMediaROPrint';
 import EMediaInvoicePayment from './components/user/e-media/EMediaInvoicePayment';
+import EMediaROReport from './components/user/reports/EMediaROReport';
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
             <Route path="rptClientAdsList" element={<ClientAdsReport />} />
             <Route path="rptHolidayList" element={<HolidayListReport />} />
             <Route path="rptEmployeeWork" element={<EmployeeWorkReport />} />
+            <Route path="rptEMediaROList" element={<EMediaROReport/>}/>
           </Route>
         </Routes>
       </BrowserRouter>

@@ -17,25 +17,6 @@ function EMediaROList() {
     const [originalData, setOriginalData] = useState([]);
     const [emedias, setEmedias] = useState([]);
     const [clients, setClients] = useState([]);
-    const [fromDate, setFromDate] = useState(null);
-    const [toDate, setToDate] = useState(null);
-    const [client, setClient] = useState(null);
-
-    // const onSearch = (values) => {
-    //     let filtered = [...originalData];
-
-    //     // Filter by client if selected
-    //     if (values.clientid) {
-    //         filtered = filtered.filter(item => item.clientid === clients.find(c => c.value === values.clientid)?.label);
-    //     }
-
-    //     // Filter by publication if selected
-    //     if (values.publication) {
-    //         filtered = filtered.filter(item => item.emediaid === emedias.find(e => e.value === values.publication)?.label);
-    //     }
-    //     setDataSource(filtered);
-    // };
-
 
     const onSearch = (values) => {
         let filtered = [...originalData];
@@ -435,7 +416,7 @@ function EMediaROList() {
 
                 <Form form={searchForm} layout="vertical" onFinish={onSearch}>
                     <Row gutter={[8, 4]}>
-                        <Col span={8}>
+                        {/* <Col span={8}>
                             <Form.Item
                                 label="STATUS"
                                 name="status"
@@ -453,7 +434,7 @@ function EMediaROList() {
                                     }
                                 />
                             </Form.Item>
-                        </Col>
+                        </Col> */}
                         <Col span={8}>
                             <Form.Item label="PUBLICATION" name="publication" style={{ marginBottom: '8px' }} >
                                 <Select
@@ -484,7 +465,7 @@ function EMediaROList() {
                                 />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
+                        {/* <Col span={8}>
                             <Form.Item label="PAY STATUS" name="paystatus" style={{ marginBottom: '8px' }} >
                                 <Select
                                     showSearch
@@ -498,7 +479,7 @@ function EMediaROList() {
                                     }
                                 />
                             </Form.Item>
-                        </Col>
+                        </Col> */}
                         <Col span={8}>
                             <Form.Item label="SEARCH RO/INVOICE NO" name="searchNo" style={{ marginBottom: '8px' }} >
                                 <Input.Search

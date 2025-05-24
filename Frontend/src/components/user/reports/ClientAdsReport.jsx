@@ -246,7 +246,7 @@ function ClientAdsReport() {
 
             <div ref={printRef}>
                 <Title level={5} style={{ textAlign: 'center' }}>CLIENTS ADS REPORT</Title>
-                <Text type="danger" style={{ float: 'right' }}>
+                <Text type="danger" style={{ float: 'left' }}>
                     Total records: {clientAdData.length}
                 </Text>
 

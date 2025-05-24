@@ -115,7 +115,7 @@ function ClientListReport() {
 
       <div ref={printRef}>
         <Title level={5} style={{ textAlign: 'center' }}>CLIENT LIST</Title>
-        <Text type="danger" style={{ float: 'right' }}>
+        <Text type="danger" style={{ float: 'left' }}>
           Total records: {clientData.length}
         </Text>
 

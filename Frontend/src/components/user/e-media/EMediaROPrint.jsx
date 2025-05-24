@@ -11,7 +11,7 @@ function EMediaROPrint() {
     const [invoiceData, setInvoiceData] = useState(null);
 
     const columns = [
-        { title: ' No', dataIndex: '', key: '', width: 80 },
+        { title: ' No', dataIndex: 'no', key: 'no', width: 80, render: (text, record, index) => index + 1  },
         {
             title: 'From To Date',
             dataIndex: 'fromToDate',

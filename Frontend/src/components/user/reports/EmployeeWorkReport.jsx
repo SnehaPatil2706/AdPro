@@ -27,7 +27,7 @@ function EmployeeWorkReport() {
 
     const getUserName = (id) => {
         const userObj = userList.find(user => user._id === id);
-        return userObj ? userObj.name : id; 
+        return userObj ? userObj.name : id;
     }
 
     const columns = [
@@ -136,7 +136,7 @@ function EmployeeWorkReport() {
     };
 
     const exportToExcel = () => {
-        const exportData = formattedData.map(({ key,userName, title , description,wdate, status, }) => ({
+        const exportData = formattedData.map(({ key, userName, title, description, wdate, status, }) => ({
             No: key,
             EmployeeName: userName,
             Title: title,
@@ -241,7 +241,13 @@ function EmployeeWorkReport() {
                     />
                 </Col>
 
-                <Col style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                <Col span={24}
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: 'end',
+                        gap: 8,
+                    }}>
                     <Button style={{ backgroundColor: '#7fdbff', color: '#000', border: 'none' }} onClick={employeeWork}>
                         SHOW
                     </Button>
@@ -257,7 +263,7 @@ function EmployeeWorkReport() {
 
             <div ref={printRef}>
                 <Title level={5} style={{ textAlign: 'center' }}>EMPLOYEE WORK REPORT</Title>
-                <Text type="danger" style={{ float: 'right' }}>
+                <Text type="danger" style={{ float: 'left' }}>
                     Total records: {employeeWorkData.length}
                 </Text>
 

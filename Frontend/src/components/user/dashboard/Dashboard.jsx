@@ -3,11 +3,13 @@ import Header from "../Header";
 import Sidebar from "../Sidebar";
 import Footer from "../Footer";
 import { Link } from "react-router";
+import { Row, Col, Divider } from 'antd';
+import FinancialCard from "./FinancialCard";
 
 function Dashboard() {
   return (
     <>     
-      <main id="main" className="main">
+      <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
         <div className="pagetitle">
           <h1>Dashboard</h1>
           <nav>
@@ -20,7 +22,7 @@ function Dashboard() {
           </nav>
         </div>
 
-        <section className="section dashboard">
+        {/* <section className="section dashboard">
           <div className="row">
             <div className="col-lg-12">
               <div className="row">
@@ -180,7 +182,20 @@ function Dashboard() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
+
+        <div style={{ margin: '20px 0' }}>
+        <Divider orientation="left">E-Media Financial Status</Divider>
+        <Row gutter={[16, 16]}>
+          <Col span={6}><FinancialCard label="RO Amount" value={20403809.3} /></Col>
+          <Col span={6}><FinancialCard label="Invoice Amount" value={22642409.56} /></Col>
+          <Col span={6}><FinancialCard label="Paid Amount" value={10988.54} textColor="green" /></Col>
+          <Col span={6}><FinancialCard label="Remaining Amount" value={22631421.02} textColor="#03A9F4" /></Col>
+          <Col span={6}><FinancialCard label="Commission Amount" value={869147.7} textColor="green" /></Col>
+          <Col span={6}><FinancialCard label="E-Media GST" value={3067044.51} textColor="green" /></Col>
+          <Col span={6}><FinancialCard label="E-Media Client GST" value={3434492.37} textColor="green" /></Col>
+        </Row>
+      </div>
       </main>
     </>
   );
