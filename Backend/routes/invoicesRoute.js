@@ -5,6 +5,66 @@ const InvoiceDetails = require("../models/InvoiceDetailsSchema");
 
 const router = express.Router();
 
+// 🔹 Get all invoices
+router.get("/", async (req, res) => {
+    try {
+        const invoices = await Invoice.find()
+            .populate('clientid')
+            .populate('agencyid');
+
+        res.json({ status: "success", data: invoices });
+    } catch (err) {
+        console.error("Error fetching all invoices:", err);
+        res.status(500).json({ status: "error", message: "Failed to fetch invoices" });
+    }
+});
+
+// Get records by agency ID
+router.get("/agency/:agencyid", async (req, res) => {
+    try {
+        const { agencyid } = req.params;
+
+        console.log("Requested Agency ID:", agencyid);
+
+        // Ensure agencyid is a valid ObjectId
+        if (!mongoose.isValidObjectId(agencyid)) {
+            return res.status(400).json({ status: "error", message: "Invalid agency ID" });
+        }
+
+        const emediaros = await Invoice.find({ agencyid: new mongoose.Types.ObjectId(agencyid) })
+            .populate("clientid")
+            .populate("gstType");
+
+        res.json({ status: "success", data: emediaros });
+    } catch (err) {
+        console.error("Error fetching EMediaROs by agencyid:", err);
+        res.status(500).json({ status: "error", message: "Failed to fetch EMediaROs by agency ID" });
+    }
+});
+
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({ status: "error", message: "Invalid ID" });
+        }
+
+        const object = await Invoice.findById(id)
+            .populate("clientid")
+            .populate("gstType");
+
+        if (!object) {
+            return res.status(404).json({ status: "error", message: "Record not found" });
+        }
+
+        res.json({ status: "success", data: object });
+    } catch (err) {
+        console.error("Error fetching by ID:", err);
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
 router.get("/last/:agencyid", async (req, res) => {
     try {
         const { agencyid } = req.params;
@@ -59,6 +119,7 @@ router.get("/:agencyid/:id", async (req, res) => {
 });
 
 // 🔹 Get invoices by agency ID
+
 router.get("/:agencyid", async (req, res) => {
     try {
         const { agencyid } = req.params;
@@ -82,19 +143,85 @@ router.get("/:agencyid", async (req, res) => {
     }
 });
 
-// 🔹 Get all invoices
-router.get("/", async (req, res) => {
+// 🔹 Get invoice by ID
+router.get("/:id", async (req, res) => {
     try {
-        const invoices = await Invoice.find()
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ status: "error", message: "Invalid invoice ID" });
+        }
+
+        const invoice = await Invoice.findById(id)
             .populate('clientid')
             .populate('agencyid');
 
-        res.json({ status: "success", data: invoices });
+        if (!invoice) {
+            return res.status(404).json({ status: "error", message: "Invoice not found" });
+        }
+
+        res.json({ status: "success", data: invoice });
     } catch (err) {
-        console.error("Error fetching all invoices:", err);
-        res.status(500).json({ status: "error", message: "Failed to fetch invoices" });
+        console.error("Error fetching invoice by ID:", err);
+        res.status(500).json({ status: "error", message: "Failed to fetch invoice" });
     }
 });
+
+// Example backend code (Node.js/Express)
+router.get('/invoices', async (req, res) => {
+  try {
+    let query = {};
+    
+    if (req.query.clientid) {
+      query.clientid = req.query.clientid;
+    }
+    
+    if (req.query.fromDate && req.query.toDate) {
+      query.invoiceDate = {
+        $gte: new Date(req.query.fromDate),
+        $lte: new Date(req.query.toDate)
+      };
+    }
+    
+    const invoices = await Invoice.find(query).populate('clientid');
+    res.json(invoices);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// For adding payment
+router.patch('/:id/add-payment', async (req, res) => {
+    try {
+        const { payment } = req.body;
+        const invoice = await Invoice.findByIdAndUpdate(
+            req.params.id,
+            { $push: { payments: payment } },
+            { new: true }
+        );
+        if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+        res.json({ message: 'Payment added', data: invoice });
+    } catch (err) {
+        res.status(500).json({ message: 'Error adding payment', error: err.message });
+    }
+});
+
+// for deleting payment
+router.patch('/:id/delete-payment', async (req, res) => {
+    try {
+        const { paymentId } = req.body;
+        const invoice = await Invoice.findByIdAndUpdate(
+            req.params.id,
+            { $pull: { payments: { _id: paymentId } } },
+            { new: true }
+        );
+        if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+        res.json({ message: 'Payment deleted', data: invoice });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting payment', error: err.message });
+    }
+});
+
 
 // 🔹 Create new invoice
 router.post("/", async (req, res) => {

@@ -359,13 +359,14 @@ function InvoiceMaster() {
                 </nav>
             </div>
 
-            <Card title="INVOICE" style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <Card title="" >
                 <Form form={form} layout="vertical" onFinish={handleSave}>
-                    <Row gutter={16}>
+                    <Row gutter={[8,4]}>
                         <Col span={8}>
                             <Form.Item
                                 label="Invoice No"
                                 name="invoiceNo"
+                                style={{ marginBottom: '8px' }}
                                 rules={[
                                     { required: true, message: 'Please enter invoice number' },
                                     { pattern: /^[0-9]+$/, message: 'Invoice number should contain only numbers' }
@@ -373,18 +374,19 @@ function InvoiceMaster() {
                                 validateStatus={invoiceNoExists ? 'error' : ''}
                                 help={invoiceNoExists ? 'Invoice number already exists' : ''}
                             >
-                                <Input onChange={handleInvoiceNoChange} placeholder="Enter invoice number" />
+                                <Input onChange={handleInvoiceNoChange} placeholder="Enter invoice number" style={{ width: '230px' }}/>
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Invoice Date" name="invoiceDate" rules={[{ required: true }]}>
-                                <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+                            <Form.Item label="Invoice Date" name="invoiceDate" rules={[{ required: true }]} style={{ marginBottom: '8px' }}>
+                                <DatePicker style={{ width: "60%" , backgroundColor: '#f48fb1', borderColor: '#9b59b6'}} format="DD/MM/YYYY" />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="clientid" label="Client" rules={[{ required: true }]}>
+                            <Form.Item name="clientid" label="Client" rules={[{ required: true }]} style={{ marginBottom: '8px' }}>
                                 <Select
                                     placeholder="Select Client"
+                                    style={{ width: '230px' }}
                                     options={clients.map((c) => ({
                                         label: c.name,
                                         value: c._id,
@@ -404,18 +406,18 @@ function InvoiceMaster() {
                         onClick={handleAddRow}
                     >
                         Add Item
-                    </Button>
+                    </Button><br /><br />
 
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item label="Amount">
-                                <InputNumber style={{ width: "100%" }} value={data.amount} readOnly />
+                                <InputNumber style={{ width: "230px",backgroundColor: '#d1c4e9', borderColor: '#9b59b6', }} value={data.amount} readOnly />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item label="Discount (%)">
                                 <InputNumber
-                                    style={{ width: "100%" }}
+                                    style={{ width: '230px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
                                     value={data.discount}
                                     min={0}
                                     max={100} // Optional: Limit the discount to 100%
@@ -425,36 +427,36 @@ function InvoiceMaster() {
                         </Col>
                         <Col span={8}>
                             <Form.Item label="Taxable Amount">
-                                <InputNumber style={{ width: "100%" }} value={data.taxableAmount} readOnly />
+                                <InputNumber style={{ width: "230px" ,backgroundColor: '#d1c4e9', borderColor: '#9b59b6'}} value={data.taxableAmount} readOnly />
                             </Form.Item>
                         </Col>
                     </Row>
 
-                    <Row gutter={16}>
+                    <Row gutter={[8,4]}>
                         <Col span={8}>
-                            <Form.Item label="GST Type" name="gstType" rules={[{ required: true }]}>
+                            <Form.Item label="GST Type" name="gstType" rules={[{ required: true }]} style={{ width: '230px', backgroundColor: '#f48fb1', borderColor: '#9b59b6', marginBottom: '8px' }}>
                                 <Select placeholder="Select GST Type" onChange={handleGstTypeChange} options={gstTypes} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label={`CGST (${data.cgstPercent}%)`}>
-                                <InputNumber style={{ width: "100%" }} readOnly value={(data.taxableAmount * data.cgstPercent / 100).toFixed(2)} />
+                            <Form.Item label={`CGST (${data.cgstPercent}%)`} style={{ marginBottom: '8px' }}>
+                                <InputNumber style={{ width: "230px" }} readOnly value={(data.taxableAmount * data.cgstPercent / 100).toFixed(2)} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label={`SGST (${data.sgstPercent}%)`}>
-                                <InputNumber style={{ width: "100%" }} readOnly value={(data.taxableAmount * data.sgstPercent / 100).toFixed(2)} />
+                            <Form.Item label={`SGST (${data.sgstPercent}%)`} style={{ marginBottom: '8px' }}>
+                                <InputNumber style={{ width: "230px" }} readOnly value={(data.taxableAmount * data.sgstPercent / 100).toFixed(2)} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label={`IGST (${data.igstPercent}%)`}>
-                                <InputNumber style={{ width: "100%" }} readOnly value={(data.taxableAmount * data.igstPercent / 100).toFixed(2)} />
+                            <Form.Item label={`IGST (${data.igstPercent}%)`} style={{ marginBottom: '8px' }}>
+                                <InputNumber style={{ width: "230px" }} readOnly value={(data.taxableAmount * data.igstPercent / 100).toFixed(2)} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Bill Amount">
+                            <Form.Item label="Bill Amount" style={{ marginBottom: '10px' }}>
                                 <InputNumber
-                                    style={{ width: "100%" }}
+                                    style={{ width: "230px",backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
                                     readOnly
                                     value={parseFloat((data.taxableAmount + (data.taxableAmount * (data.cgstPercent + data.sgstPercent + data.igstPercent) / 100)).toFixed(2))}
                                 />

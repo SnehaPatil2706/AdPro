@@ -4,9 +4,9 @@ const Client = require('./ClientSchema'); // Import Client schema
 const Agency = require('./AgencySchema'); // Import Agency schema
 
 const paymentSchema = new mongoose.Schema({
-    paymentDate: { type: Date, required: true },
-    description: { type: String, required: true },
-    amount: { type: Number, required: true },
+    paymentDate: { type: Date},
+    description: { type: String},
+    amount: { type: Number},
 });
 // Define the schema for Invoice
 const invoiceSchema = new mongoose.Schema({

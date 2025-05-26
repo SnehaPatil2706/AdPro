@@ -29,6 +29,7 @@ import PMediaROMaster from './components/user/p-media/PMediaROMaster';
 import EMediaROPrint from './components/user/e-media/EMediaROPrint';
 import EMediaInvoicePayment from './components/user/e-media/EMediaInvoicePayment';
 import EMediaROReport from './components/user/reports/EMediaROReport';
+import InvoicePayment from './components/user/invoice/InvoicePayment';
 
 function App() {
   return (
@@ -60,6 +61,8 @@ function App() {
             <Route path="invoiceMaster" element={<InvoiceMaster />} />
             <Route path="invoiceMaster/:id" element={<InvoiceMaster />} />
             <Route path="invoicePrint/:agencyid/:invoiceid" element={<InvoicePrint />} />
+            <Route path="invoicePayment/:id" element={<InvoicePayment/>}/>
+            <Route path='invoicePayment' element={<InvoicePayment/>}/>
           </Route>
           <Route path="emedia" element={<Landing />}>
             <Route path="emediaROList" element={<EMediaROList />} />

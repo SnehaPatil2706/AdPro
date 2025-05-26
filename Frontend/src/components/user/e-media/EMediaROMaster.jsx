@@ -637,10 +637,7 @@ function EMediaROMaster() {
                         </Col>
                         <Col span={8}>
                             <Form.Item label="Client" name="clientid" style={{ marginBottom: '8px' }}>
-                                {/* {
-                                    console.log(clients[0].label)
-                                    
-                                } */}
+                               
                                 <Select
                                     showSearch
                                     allowClear

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom';
-import { Card, Form, DatePicker, Button, Row, Col, Table, Typography, message, Select, Modal, Input, InputNumber, Popconfirm } from 'antd';
+import { Card, Form, DatePicker, Button, Row, Col, Table, Typography, message, Select, Modal, Input, InputNumber, Popconfirm, Tooltip } from 'antd';
 import { SearchOutlined, RedoOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, DollarOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -43,7 +43,7 @@ function InvoiceList() {
         }
 
         try {
-            const response = await axios.get(`http://localhost:8081/invoices/${agencyid}`);
+            const response = await axios.get(`http://localhost:8081/invoices`);
             const invoices = response.data?.data || [];
 
             console.log(invoices);
@@ -150,9 +150,6 @@ function InvoiceList() {
 
 
     const handlePrint = (agencyid, invoiceid) => {
-        // console.log(agencyid, invoiceid);
-        
-        // Navigate to the invoice print page with the correct agency ID and invoice ID
         navigate(`/invoice/invoicePrint/${agencyid}/${invoiceid}`);
     };
 
@@ -161,56 +158,6 @@ function InvoiceList() {
         description: '',
         amount: null
     });
-
-
-    const handlePaymentSave = async (values) => {
-        try {
-            const response = await axios.put(`http://localhost:8081/invoices/${selectedInvoice._id}/payments`, {
-                paymentDate: values.paymentDate.format('YYYY-MM-DD'), // Convert to proper format
-                description: values.description,
-                amount: values.amount,
-            });
-
-            if (response.data.status === "success") {
-                message.success('Payment added successfully!');
-                form.resetFields();
-                setIsPaymentModalVisible(false);
-                fetchInvoices(); //  <-- this will refresh and update "remaining" and "paid"
-            } else {
-                message.error('Failed to add payment');
-            }
-        } catch (error) {
-            console.error("Error saving payment:", error);
-            message.error('An error occurred while saving payment');
-        }
-    };
-
-
-    const handleDeletePayment = async (id) => {
-        const updatedPayments = (selectedInvoice.payments || []).filter(p => p._id !== id);
-
-        try {
-            const response = await axios.put(`http://localhost:8081/invoices/${selectedInvoice.key}`, {
-                payments: updatedPayments,
-            });
-
-            if (response.data.status === "success") {
-                setSelectedInvoice({
-                    ...selectedInvoice,
-                    payments: updatedPayments,
-                    remaining: selectedInvoice.billAmount - updatedPayments.reduce((sum, p) => sum + p.amount, 0),
-                });
-                message.success('Payment deleted!');
-                fetchInvoices(); // refresh full invoice list from server
-            } else {
-                message.error('Failed to delete payment');
-            }
-        } catch (error) {
-            console.error("Error deleting payment:", error);
-            message.error('An error occurred while deleting payment');
-        }
-    };
-
 
     const columns = [
         {
@@ -221,45 +168,60 @@ function InvoiceList() {
             render: (_, record) => (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
                     <div style={{ display: 'flex', gap: '4px' }}>
-                        <Button
-                            size="small"
-                            icon={<EditOutlined />}
-                            style={{ background: '#3b82f6', color: '#fff' }}
-                            onClick={() => navigate(`/invoice/invoiceMaster/${record.key}`)}
-                        />
-                        <Popconfirm
-                            title="Are you sure you want to delete this invoice?"
-                            onConfirm={() => deleteInvoice(record._id)}
-                            okText="Yes"
-                            cancelText="No"
-                        >
+                        <Tooltip title="Click to edit"
+                            overlayInnerStyle={{
+                                backgroundColor: '#3b82f6',
+                            }}>
                             <Button
-                                type="primary"
-                                danger
-                                icon={<DeleteOutlined />}
                                 size="small"
-                                style={{ padding: '4px 6px' }} // optional: fine-tune spacing
+                                icon={<EditOutlined />}
+                                style={{ background: '#3b82f6', color: '#fff' }}
+                                onClick={() => navigate(`/invoice/invoiceMaster/${record.key}`)}
                             />
-                        </Popconfirm>
+                        </Tooltip>
+                        <Tooltip title="Click to delete"
+                            overlayInnerStyle={{
+                                backgroundColor: '#ef4444',
+                            }}>
+                            <Popconfirm
+                                title="Are you sure you want to delete this invoice?"
+                                onConfirm={() => deleteInvoice(record._id)}
+                                okText="Yes"
+                                cancelText="No"
+                            >
+                                <Button
+                                    type="primary"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    size="small"
+                                    style={{ padding: '4px 6px' }} // optional: fine-tune spacing
+                                />
+                            </Popconfirm>
+                        </Tooltip>
                     </div>
                     <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-
-                        <Button
-                            size="small"
-                            icon={<PrinterOutlined />}
-                            style={{ background: '#22c55e', color: '#fff' }}
-                            onClick={() => handlePrint(record.agencyid._id || record.agencyid, record._id)}
-                        />
-
-                        <Button
-                            size="small"
-                            icon={<DollarOutlined />}
-                            style={{ background: '#be185d', color: '#fff' }}
-                            onClick={() => {
-                                setSelectedInvoice(record); // Set the selected invoice
-                                setIsPaymentModalVisible(true); // Open the modal
-                            }}
-                        />
+                        <Tooltip title="Click to print"
+                            overlayInnerStyle={{
+                                backgroundColor: '#22c55e',
+                            }}>
+                            <Button
+                                size="small"
+                                icon={<PrinterOutlined />}
+                                style={{ background: '#22c55e', color: '#fff' }}
+                                onClick={() => handlePrint(record.agencyid._id || record.agencyid, record._id)}
+                            />
+                        </Tooltip>
+                        <Tooltip title="Click to add / view packages and payment transactions"
+                            overlayInnerStyle={{
+                                backgroundColor: '#be185d',
+                            }}>
+                            <Button
+                                size="small"
+                                icon={<DollarOutlined />}
+                                style={{ background: '#be185d', color: '#fff' }}
+                                onClick={() => navigate(`/invoice/invoicePayment/${record.key}`)}
+                            />
+                        </Tooltip>
                     </div>
                 </div>
             ),
@@ -280,48 +242,6 @@ function InvoiceList() {
         { title: 'Paid', dataIndex: 'paid', key: 'paid', width: 80 },
         { title: 'Remaining', dataIndex: 'remaining', key: 'remaining', width: 100 },
     ];
-
-    const paymentColumns = [
-        {
-            title: 'No',
-            dataIndex: 'no',
-            key: 'no',
-            render: (_, __, index) => index + 1,
-            width: '5%',
-        },
-        {
-            title: 'Payment Date',
-            dataIndex: 'paymentDate',
-            key: 'paymentDate',
-            render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'N/A',
-        },
-        {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-        },
-        {
-            title: 'Amount',
-            dataIndex: 'amount',
-            key: 'amount',
-            align: 'right',
-            render: (amount) => amount.toFixed(2),
-        },
-        {
-            title: '',
-            key: 'action',
-            render: (_, record) => (
-                <Button
-                    type="link"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDeletePayment(record._id)}
-                />
-            ),
-            width: '5%',
-        },
-    ];
-
 
     return (
         <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
@@ -371,7 +291,7 @@ function InvoiceList() {
 
                     <Row justify="start" gutter={16}>
                         <Col>
-                            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+                            <Button type="primary" htmlType="submit" icon={<SearchOutlined />} style={{ backgroundColor: '#7fdbff', color: '#000' }}>
                                 SHOW
                             </Button>
                         </Col>
@@ -410,97 +330,6 @@ function InvoiceList() {
                     style={{ marginTop: 12 }}
                 />
             </Card>
-
-            <Modal
-                title={<h2 style={{ textAlign: 'center', color: 'orange', fontWeight: 'bold' }}>Invoice Payment Details</h2>}
-                visible={isPaymentModalVisible}
-                onCancel={() => setIsPaymentModalVisible(false)}
-                footer={null}
-                width={800}
-            >
-                {selectedInvoice && (
-                    <div>
-                        <div style={{ marginBottom: 16 }}>
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <p><strong>Invoice No :</strong> {selectedInvoice.invoiceNo}</p>
-                                    <p><strong>Invoice Date :</strong>
-                                        {selectedInvoice.invoiceDate ? dayjs(selectedInvoice.invoiceDate).format('DD/MM/YYYY') : 'N/A'}
-                                    </p>
-                                </Col>
-                                <Col span={12}>
-                                    <p><strong>Client :</strong> {selectedInvoice.client}</p>
-                                    <p><strong>Invoice Amount :</strong> {selectedInvoice.billAmount?.toFixed(2)}</p>
-                                    <p><strong>Remaining Amount :</strong> {selectedInvoice.remaining?.toFixed(2)}</p>
-                                </Col>
-                            </Row>
-                        </div>
-
-                        <Table
-                            dataSource={selectedInvoice.payments || []}
-                            columns={paymentColumns}
-                            pagination={false}
-                            rowKey="_id"
-                            bordered
-                            style={{ marginBottom: 16 }}
-                        />
-
-                        <Form
-                            layout="vertical"
-                            onFinish={handlePaymentSave}
-                            form={form}
-                        >
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <Form.Item
-                                        label="Payment Date"
-                                        name="paymentDate"
-                                        rules={[{ required: true, message: 'Please select a payment date' }]}
-                                    >
-                                        <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
-                                    <Form.Item
-                                        label="Description"
-                                        name="description"
-                                        rules={[{ required: true, message: 'Please enter a description' }]}
-                                    >
-                                        <Input placeholder="Enter description" />
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <Form.Item
-                                        label="Amount"
-                                        name="amount"
-                                        rules={[{ required: true, message: 'Please enter an amount' }]}
-                                    >
-                                        <InputNumber
-                                            style={{ width: '100%' }}
-                                            min={0}
-                                            placeholder="Enter amount"
-                                        />
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-                            <Row justify="center" gutter={16}>
-                                <Col>
-                                    <Button type="primary" onClick={() => form.submit()} style={{ backgroundColor: '#40a9ff' }}>
-                                        Save
-                                    </Button>
-                                </Col>
-                                <Col>
-                                    <Button danger onClick={() => setIsPaymentModalVisible(false)}>
-                                        Close
-                                    </Button>
-                                </Col>
-                            </Row>
-                        </Form>
-                    </div>
-                )}
-            </Modal>
         </main>
     );
 }
