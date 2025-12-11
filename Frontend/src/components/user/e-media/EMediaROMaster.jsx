@@ -31,10 +31,10 @@ function EMediaROMaster() {
             totalCharges: ''
         },
     ]);
-    const [roNoExists, setRoNoExists] = useState(false);
     const [emedias, setEmedias] = useState([]);
     const [clients, setClients] = useState([]);
     const [gsts, setGsts] = useState([]);
+    const [errors, setErrors] = useState({});
     const { RangePicker } = DatePicker;
     const [data, setData] = useState({
         agencyid: agency?._id,
@@ -75,6 +75,67 @@ function EMediaROMaster() {
         { label: 'Paid', value: 'paid' },
         { label: 'Bonus', value: 'bonus' },
     ];
+
+    const validateForm = () => {
+        const values = form.getFieldsValue();
+        const newErrors = {};
+
+        // Validate RO Number
+        if (!values.chequeno) {
+            newErrors.chequeno = 'RO number is required';
+        } else if (!/^\d+$/.test(values.chequeno)) {
+            newErrors.chequeno = 'Cheque number must be numeric';
+        }
+
+        // Validate RO Date
+        if (!values.rodate) {
+            newErrors.rodate = 'RO date is required';
+        }
+
+        // Validate Cheuque Date
+        if (!values.chequedate) {
+            newErrors.chequedate = 'cheque date is required';
+        }
+
+        // Validate Client
+        if (!values.clientid) {
+            newErrors.clientid = 'Client is required';
+        }
+
+        // Validate Publication
+        if (!values.emediaid) {
+            newErrors.emediaid = 'Publication is required';
+        }
+
+        // Validate Broadcast Center
+        if (!values.centers) {
+            newErrors.centers = 'Broadcast center is required';
+        } else if (!/^[A-Za-z\s]+$/.test(values.centers)) {
+            newErrors.centers = 'Broadcast center can only contain letters';
+        }
+
+        // Validate Language
+        if (!values.language) {
+            newErrors.language = 'Language is required';
+        }
+
+        // Validate Commission Percentage
+        if (!values.comissionpercent) {
+            newErrors.comissionpercent = 'Commission percentage is required';
+        } else if (isNaN(values.comissionpercent)) {
+            newErrors.comissionpercent = 'Commission must be a number';
+        } else if (values.comissionpercent < 0 || values.comissionpercent > 100) {
+            newErrors.comissionpercent = 'Commission must be between 0 and 100';
+        }
+
+        // Validate GST Type if amount is non-zero
+        if (!values.gstid) {
+            newErrors.gstid = 'gst type is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleAddRow = () => {
         const newItem = {
@@ -179,7 +240,6 @@ function EMediaROMaster() {
                 robillamount = (parseFloat(robillamount) + parseFloat(gstAmount)).toFixed(2);
             }
         }
-
         form.setFieldsValue({ robillamount });
         return robillamount;
     };
@@ -229,6 +289,12 @@ function EMediaROMaster() {
     };
 
     const handleSave = async (values) => {
+
+        if (!validateForm()) {
+            message.error('Please fix the form errors before submitting');
+            return;
+        }
+
         try {
             setLoading(true);
 
@@ -501,8 +567,31 @@ function EMediaROMaster() {
             });
     };
 
+    // Add this function to fetch the last RO number
+    const fetchLastRONumber = async () => {
+        try {
+            const response = await axios.get('http://localhost:8081/emediaros/lastrono');
+            if (response.data && response.data.lastRONumber) {
+                return response.data.lastRONumber;
+            }
+            return 0; // Default if no ROs exist
+        } catch (err) {
+            console.error('Error fetching last RO number:', err);
+            return 0;
+        }
+    };
+
     useEffect(() => {
         loadData();
+
+        if (!id) {
+            const getNextRONumber = async () => {
+                const lastRONumber = await fetchLastRONumber();
+                form.setFieldsValue({ rono: lastRONumber + 1 });
+            };
+            getNextRONumber();
+        }
+
         if (id) {
             setIsEditMode(true);
             axios.get(`http://localhost:8081/emediaros/${id}`)
@@ -624,20 +713,36 @@ function EMediaROMaster() {
                                     { required: true, message: 'Please enter ro number' },
                                     { pattern: /^[0-9]+$/, message: 'RO number should contain only numbers' }
                                 ]}
-                                validateStatus={roNoExists ? 'error' : ''}
-                                help={roNoExists ? 'RO number already exists' : ''}
+                                // validateStatus={roNoExists ? 'error' : ''}
+                                // help={roNoExists ? 'RO number already exists' : ''}
                             >
-                                <Input onChange={handleRONoChange} placeholder="Enter ro number" style={{ width: '200px' }} />
+                                <Input
+                                    readOnly
+                                    style={{
+                                        width: '200px',
+                                        backgroundColor: '#f0f0f0',
+                                        color: 'rgba(0, 0, 0, 0.85)'
+                                    }}
+                                />
+
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="RO Date" name="rodate" style={{ marginBottom: '8px' }}>
-                                <DatePicker style={{ width: "50%", backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} format="DD/MM/YYYY" />
+                            <Form.Item label="RO Date" name="rodate" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.rodate ? 'error' : ''}
+                                help={errors.rodate}
+                            >
+                                <DatePicker style={{ width: "50%", backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
+                                    format="DD/MM/YYYY"
+                                    disabledDate={(current) => current && current < dayjs().startOf('day')}
+                                />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Client" name="clientid" style={{ marginBottom: '8px' }}>
-                               
+                            <Form.Item label="Client" name="clientid" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.clientid ? 'error' : ''}
+                                help={errors.clientid}>
+
                                 <Select
                                     showSearch
                                     allowClear
@@ -662,7 +767,9 @@ function EMediaROMaster() {
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Publication" name="emediaid" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Publication" name="emediaid" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.emediaid ? 'error' : ''}
+                                help={errors.emediaid}>
                                 <Select
                                     showSearch
                                     allowClear
@@ -677,7 +784,10 @@ function EMediaROMaster() {
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Broadcast Center" name="centers" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Broadcast Center" name="centers" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.centers ? 'error' : ''}
+                                help={errors.centers}
+                            >
                                 <Input style={{ width: '200px' }} />
                             </Form.Item>
                         </Col>
@@ -687,7 +797,10 @@ function EMediaROMaster() {
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Language" name="language" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Language" name="language" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.language ? 'error' : ''}
+                                help={errors.language}
+                            >
                                 <Select
                                     showSearch
                                     allowClear
@@ -736,7 +849,10 @@ function EMediaROMaster() {
                             </Form.Item>
                         </Col>
                         <Col span={6}>
-                            <Form.Item label="Comission(%)" name="comissionpercent" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Comission(%)" name="comissionpercent" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.comissionpercent ? 'error' : ''}
+                                help={errors.comissionpercent}
+                            >
                                 <Input style={{ width: '180px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
                                     onChange={() => {
                                         // Update commission amount when percentage changes
@@ -762,7 +878,9 @@ function EMediaROMaster() {
                     <Row gutter={[8, 4]}>
                         <Col span={5}>
                             <Form.Item label="GST Tax Type" name="gstid"
-                                style={{ marginBottom: '8px', backgroundColor: '#f48fb1', borderColor: '#9b59b6', width: '200px' }}>
+                                style={{ marginBottom: '8px', backgroundColor: '#f48fb1', borderColor: '#9b59b6', width: '200px' }}
+                                validateStatus={errors.gstid ? 'error' : ''}
+                                help={errors.gstid}>
                                 <Select
                                     showSearch
                                     allowClear
@@ -805,13 +923,19 @@ function EMediaROMaster() {
 
                     <Row gutter={[8, 4]}>
                         <Col span={5}>
-                            <Form.Item label="Cheque No" name="chequeno" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="Cheque No" name="chequeno" style={{ marginBottom: '8px' }}
+                                validateStatus={errors.chequeno ? 'error' : ''}
+                                help={errors.chequeno}>
                                 <Input style={{ width: '170px' }} />
                             </Form.Item>
                         </Col>
                         <Col span={6}>
-                            <Form.Item label="Cheque Date" name="chequedate" style={{ marginBottom: '8px' }}>
-                                <DatePicker style={{ width: "100%", backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} format="DD/MM/YYYY" />
+                            <Form.Item label="Cheque Date" name="chequedate" style={{ marginBottom: '8px' }} validateStatus={errors.chequedate ? 'error' : ''}
+                                help={errors.chequedate}>
+                                <DatePicker style={{ width: "100%", backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
+                                    format="DD/MM/YYYY"
+                                    disabledDate={(current) => current && current < dayjs().startOf('day')}
+                                />
                             </Form.Item>
                         </Col>
                         <Col span={9}>

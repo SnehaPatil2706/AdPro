@@ -8,11 +8,11 @@ import { Space, Popconfirm } from "antd";
 
 function EMedia() {
   let agency = JSON.parse(localStorage.getItem("agency")) || null;
-
   const [states, setStates] = useState([]);
   const navigate = useNavigate();
   const [result, setResult] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [data, setData] = useState({
     id: "",
@@ -30,10 +30,35 @@ function EMedia() {
 
   function handleChange(e) {
     setData({ ...data, [e.target.id]: e.target.value });
-  }
+  };
+
+  function validateForm() {
+    const newErrors = {};
+
+    if (!data.name.trim()) {
+      newErrors.name = "name is required";
+    } else if (!/^[A-Za-z\s]+$/.test(data.name.trim())) {
+      newErrors.name = "name can only contain letters";
+    }
+
+    if (!data.contact.trim()) newErrors.contact = "contact is required";
+    else if (!/^\d{10}$/.test(data.contact.trim()))
+      newErrors.contact = "contact must be a 10-digit number";
+
+    if (!data.address.trim()) newErrors.address = "address is required";
+    if (!data.stateid) newErrors.stateid = "state is required";
+
+    if (!data.gstno.trim()) {
+      newErrors.gstno = "gst no. is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   function handleSave(e) {
     e.preventDefault();
+    if (!validateForm()) return;
 
     if (isEditMode) {
       axios
@@ -53,7 +78,7 @@ function EMedia() {
         })
         .catch(() => message.error("Save failed"));
     }
-  }
+  };
 
   function handleCancel() {
     setData({
@@ -66,7 +91,8 @@ function EMedia() {
       gstno: "",
     });
     setIsEditMode(false);
-  }
+    setErrors({});
+  };
 
   function handleEdit(record) {
     setData({
@@ -79,7 +105,8 @@ function EMedia() {
       gstno: record.gstno,
     });
     setIsEditMode(true);
-  }
+    setErrors({});
+  };
 
   function handleDelete(id) {
     axios
@@ -89,7 +116,7 @@ function EMedia() {
         loadData();
       })
       .catch(() => message.error("Delete failed"));
-  }
+  };
 
   function loadData() {
     setData({
@@ -102,6 +129,7 @@ function EMedia() {
       gstno: "",
     });
     setIsEditMode(false);
+    setErrors({});
 
     axios.get("http://localhost:8081/states").then((res) => {
       setStates(
@@ -112,10 +140,10 @@ function EMedia() {
       );
     });
 
-    axios.get("http://localhost:8081/emedias/" ).then((res) => {
+    axios.get("http://localhost:8081/emedias/").then((res) => {
       setResult(res.data.data);
     });
-  }
+  };
 
   const columns = [
     {
@@ -165,6 +193,7 @@ function EMedia() {
       ),
     },
   ];
+
   return (
     <main id="main" className="main">
       <div className="pagetitle">
@@ -191,7 +220,9 @@ function EMedia() {
                     onChange={handleChange}
                     value={data.name}
                     placeholder="Name"
+                    status={errors.name ? "error" : ""}
                   />
+                  {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   Contact*
@@ -200,7 +231,9 @@ function EMedia() {
                     onChange={handleChange}
                     value={data.contact}
                     placeholder="Contact"
+                    status={errors.contact ? "error" : ""}
                   />
+                  {errors.contact && <div style={{ color: "red" }}>{errors.contact}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   Address*
@@ -209,7 +242,9 @@ function EMedia() {
                     onChange={handleChange}
                     value={data.address}
                     placeholder="Address"
+                    status={errors.address ? "error" : ""}
                   />
+                  {errors.address && <div style={{ color: "red" }}>{errors.address}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   State*<br />
@@ -224,6 +259,7 @@ function EMedia() {
                     }
                     onChange={(value) => setData({ ...data, stateid: value })}
                   />
+                  {errors.stateid && <div style={{ color: "red" }}>{errors.stateid}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   GST No
@@ -232,7 +268,9 @@ function EMedia() {
                     onChange={handleChange}
                     value={data.gstno}
                     placeholder="GST No"
+                    status={errors.gstno ? "error" : ""}
                   />
+                  {errors.gstno && <div style={{ color: "red" }}>{errors.gstno}</div>}
                 </div>
                 <div className="col-lg-12 p-1">
                   <Button onClick={handleSave} type="primary">
@@ -261,7 +299,7 @@ function EMedia() {
         </div>
       </section>
     </main>
-    
+
   )
 }
 

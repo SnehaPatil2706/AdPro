@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Modal, Button, Input, DatePicker, Table, message, Popconfirm } from 'antd';
+import { Modal, Button, Input, DatePicker, Table, message, Popconfirm, Form  } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -13,6 +13,7 @@ function EMediaInvoicePayment() {
     const [paymentDate, setPaymentDate] = useState(dayjs());
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
+    const [form] = Form.useForm();
     const navigate = useNavigate();
     const { id } = useParams(); // Get invoice ID from route
 
@@ -81,12 +82,21 @@ function EMediaInvoicePayment() {
     const data = [];
 
     // Save payment handler
-    const handleSavePayment = async () => {
-        if (!paymentDate || !description || !amount) {
-            message.error('Please fill all payment fields.');
-            return;
-        }
+        const handleSavePayment = async () => {
         try {
+            // Validate all fields
+            await form.validateFields();
+
+            const invoiceAmount = Number(invoice?.invoiceamount) || 0;
+            const payments = invoice?.payments || [];
+            const paidAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            const remainingAmount = invoiceAmount - paidAmount;
+            
+            if (Number(amount) > remainingAmount) {
+                message.error(`Payment amount cannot exceed remaining amount of ${remainingAmount.toFixed(2)}`);
+                return;
+            }
+
             await axios.patch(
                 `http://localhost:8081/emediaroinvoices/${invoice._id}/add-payment`,
                 {
@@ -98,15 +108,17 @@ function EMediaInvoicePayment() {
                 }
             );
             message.success('Payment saved!');
-            // Optionally, refresh invoice data to update table
             fetchInvoice(id);
-            setDescription('');
-            setAmount('');
+            form.resetFields();
             setPaymentDate(dayjs());
         } catch (err) {
-            message.error('Failed to save payment.');
+            if (err.response) {
+                message.error('Failed to save payment.');
+            }
+            // Antd form validation errors will be shown automatically
         }
     };
+
 
     // Delete payment handler
     const handleDeletePayment = async (paymentId) => {
@@ -198,43 +210,76 @@ function EMediaInvoicePayment() {
                         </div>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: 24 }}>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ marginBottom: 16 }}>
-                            <label>Payment Date</label>
-                            <DatePicker style={{ width: '100%' }} defaultValue={dayjs()} format="DD/MM/YYYY" value={paymentDate} onChange={setPaymentDate} />
+                <Form form={form} layout="vertical">
+                    <div style={{ display: 'flex', gap: 24 }}>
+                        <div style={{ flex: 1 }}>
+                            <Form.Item
+                                label="Payment Date"
+                                name="paymentDate"
+                                // rules={[{ required: true, message: 'Please select payment date' }]}
+                            >
+                                <DatePicker style={{ width: '100%' }} defaultValue={dayjs()} format="DD/MM/YYYY" value={paymentDate} onChange={setPaymentDate} />
+                            </Form.Item>
+                            
+                            <Form.Item
+                                label="Description"
+                                name="description"
+                                rules={[
+                                    { required: true, message: 'Please enter description' },
+                                    { max: 100, message: 'Description cannot exceed 100 characters' }
+                                ]}
+                            >
+                                <Input 
+                                    value={description} 
+                                    onChange={e => setDescription(e.target.value)} 
+                                />
+                            </Form.Item>
+                            
+                            <Form.Item
+                                label="Amount"
+                                name="amount"
+                                rules={[
+                                    { required: true, message: 'Please enter amount' },
+                                    { 
+                                        validator: (_, value) => {
+                                            if (value && isNaN(value)) {
+                                                return Promise.reject('Please enter a valid number');
+                                            }
+                                            if (value <= 0) {
+                                                return Promise.reject('Amount must be greater than 0');
+                                            }
+                                            return Promise.resolve();
+                                        }
+                                    }
+                                ]}
+                            >
+                                <Input
+                                    type="number"
+                                    value={amount}
+                                    style={{ width: '50%' }}
+                                    onChange={e => setAmount(e.target.value)}
+                                />
+                            </Form.Item>
                         </div>
-                        <div style={{ marginBottom: 16 }}>
-                            <label>Description</label>
-                            <Input value={description} onChange={e => setDescription(e.target.value)} />
-                        </div>
-                        <div style={{ marginBottom: 16 }}>
-                            <label>Amount</label><br />
-                            <Input
-                                type="number"
-                                value={amount}
-                                style={{ width: '50%' }}
-                                onChange={e => setAmount(e.target.value)}
+                        <div style={{ flex: 1 }}>
+                            <Table
+                                columns={columns}
+                                dataSource={invoice?.payments?.map((p, i) => ({
+                                    key: i,
+                                    no: i + 1,
+                                    paymentdate: p.paymentdate ? new Date(p.paymentdate).toLocaleDateString('en-GB') : '',
+                                    description: p.description,
+                                    amount: p.amount,
+                                    _id: p._id,
+                                })) || []}
+                                pagination={false}
+                                bordered
+                                size="small"
                             />
                         </div>
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <Table
-                            columns={columns}
-                            dataSource={invoice?.payments?.map((p, i) => ({
-                                key: i,
-                                no: i + 1,
-                                paymentdate: p.paymentdate ? new Date(p.paymentdate).toLocaleDateString('en-GB') : '',
-                                description: p.description,
-                                amount: p.amount,
-                                _id: p._id,
-                            })) || []}
-                            pagination={false}
-                            bordered
-                            size="small"
-                        />
-                    </div>
-                </div>
+                </Form>
+
 
                 <div style={{ textAlign: 'center', marginTop: 24, marginBottom: 0 }}>
                     <Button type="primary" style={{ marginRight: 16, width: 120 }} onClick={handleSavePayment}>SAVE</Button>

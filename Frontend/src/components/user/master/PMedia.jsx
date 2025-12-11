@@ -8,13 +8,80 @@ import { Space, Popconfirm } from "antd";
 
 function PMedia() {
   let agency = JSON.parse(localStorage.getItem("agency")) || null;
-  
-    const [states, setStates] = useState([]);
-    const navigate = useNavigate();
-    const [result, setResult] = useState([]);
-    const [isEditMode, setIsEditMode] = useState(false);
-  
-    const [data, setData] = useState({
+  const [states, setStates] = useState([]);
+  const navigate = useNavigate();
+  const [result, setResult] = useState([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const [data, setData] = useState({
+    id: "",
+    agencyid: agency._id,
+    name: "",
+    contact: "",
+    address: "",
+    stateid: "",
+    gstno: "",
+  });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  function handleChange(e) {
+    setData({ ...data, [e.target.id]: e.target.value });
+  };
+
+  function validateForm() {
+    const newErrors = {};
+
+    if (!data.name.trim()) {
+      newErrors.name = "name is required";
+    } else if (!/^[A-Za-z\s]+$/.test(data.name.trim())) {
+      newErrors.name = "name can only contain letters";
+    }
+
+    if (!data.contact.trim()) newErrors.contact = "contact is required";
+    else if (!/^\d{10}$/.test(data.contact.trim()))
+      newErrors.contact = "contact must be a 10-digit number";
+
+    if (!data.address.trim()) newErrors.address = "address is required";
+    if (!data.stateid) newErrors.stateid = "state is required";
+
+    if (!data.gstno.trim()) {
+      newErrors.gstno = "gst no. is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  function handleSave(e) {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    if (isEditMode) {
+      axios
+        .put(`http://localhost:8081/pmedia/${data.id}`, data)
+        .then(() => {
+          message.success("P-Media updated successfully");
+          loadData();
+          setIsEditMode(false);
+        })
+        .catch(() => message.error("Update failed"));
+    } else {
+      axios
+        .post("http://localhost:8081/pmedia", data)
+        .then(() => {
+          message.success("P-Media added successfully");
+          loadData();
+        })
+        .catch(() => message.error("Save failed"));
+    }
+  };
+
+  function handleCancel() {
+    setData({
       id: "",
       agencyid: agency._id,
       name: "",
@@ -23,130 +90,91 @@ function PMedia() {
       stateid: "",
       gstno: "",
     });
-  
-    useEffect(() => {
-      loadData();
-    }, []);
-  
-    function handleChange(e) {
-      setData({ ...data, [e.target.id]: e.target.value });
-    }
-  
-    function handleSave(e) {
-      e.preventDefault();
-  
-      if (isEditMode) {
-        axios
-          .put(`http://localhost:8081/pmedia/${data.id}`, data)
-          .then(() => {
-            message.success("P-Media updated successfully");
-            loadData();
-            setIsEditMode(false);
-          })
-          .catch(() => message.error("Update failed"));
-      } else {
-        axios
-          .post("http://localhost:8081/pmedia", data)
-          .then(() => {
-            message.success("P-Media added successfully");
-            loadData();
-          })
-          .catch(() => message.error("Save failed"));
-      }
-    }
-  
-    function handleCancel() {
-      setData({
-        id: "",
-        agencyid: agency._id,
-        name: "",
-        contact: "",
-        address: "",
-        stateid: "",
-        gstno: "",
-      });
-      setIsEditMode(false);
-    }
-  
-    function handleEdit(record) {
-      setData({
-        id: record._id,
-        agencyid: record.agencyid,
-        name: record.name,
-        contact: record.contact,
-        address: record.address,
-        stateid: record.stateid,
-        gstno: record.gstno,
-      });
-      setIsEditMode(true);
-    }
-  
-    function handleDelete(id) {
-      axios
-        .delete(`http://localhost:8081/pmedia/${id}`)
-        .then(() => {
-          message.success("P-Media deleted successfully");
-          loadData();
-        })
-        .catch(() => message.error("Delete failed"));
-    }
-  
-    function loadData() {
-      setData({
-        id: "",
-        agencyid: agency._id,
-        name: "",
-        contact: "",
-        address: "",
-        stateid: "",
-        gstno: "",
-      });
-      setIsEditMode(false);
-  
-      axios.get("http://localhost:8081/states").then((res) => {
-        setStates(
-          res.data.data.map((state) => ({
-            label: state.name,
-            value: state._id,
-          }))
-        );
-      });
-  
-      axios.get("http://localhost:8081/pmedia/" ).then((res) => {
-        setResult(res.data.data);
-      });
-    }
-  
-    const columns = [
-      {
-        title: "Name",
-        dataIndex: "name",
-      },
-      {
-        title: "Address",
-        dataIndex: "address",
-      },
-      {
-        title: "GST",
-        dataIndex: "gstno",
-      },
-      {
-        title: "Contact",
-        dataIndex: "contact",
-      },
-      {
-        title: "Actions",
-        render: (record) => (
-          <Space>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              size="small"
-              onClick={() => handleEdit(record)}
-            >
-              Edit
-            </Button>
-            <Popconfirm
+    setIsEditMode(false);
+    setErrors({});
+  };
+
+  function handleEdit(record) {
+    setData({
+      id: record._id,
+      agencyid: record.agencyid,
+      name: record.name,
+      contact: record.contact,
+      address: record.address,
+      stateid: record.stateid,
+      gstno: record.gstno,
+    });
+    setIsEditMode(true);
+    setErrors({});
+  };
+
+  function handleDelete(id) {
+    axios
+      .delete(`http://localhost:8081/pmedia/${id}`)
+      .then(() => {
+        message.success("P-Media deleted successfully");
+        loadData();
+      })
+      .catch(() => message.error("Delete failed"));
+  };
+
+  function loadData() {
+    setData({
+      id: "",
+      agencyid: agency._id,
+      name: "",
+      contact: "",
+      address: "",
+      stateid: "",
+      gstno: "",
+    });
+    setIsEditMode(false);
+    setErrors({});
+
+    axios.get("http://localhost:8081/states").then((res) => {
+      setStates(
+        res.data.data.map((state) => ({
+          label: state.name,
+          value: state._id,
+        }))
+      );
+    });
+
+    axios.get("http://localhost:8081/pmedia/").then((res) => {
+      setResult(res.data.data);
+    });
+  };
+
+  const columns = [
+    {
+      title: "Name",
+      dataIndex: "name",
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+    },
+    {
+      title: "GST",
+      dataIndex: "gstno",
+    },
+    {
+      title: "Contact",
+      dataIndex: "contact",
+    },
+    {
+      title: "Actions",
+      render: (record) => (
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEdit(record)}
+          >
+            Edit
+          </Button>
+          <Popconfirm
             title="Are you sure you want to delete this media?"
             onConfirm={() => handleDelete(record._id)}  // ✅ Only runs when user confirms
             okText="Yes"
@@ -161,10 +189,11 @@ function PMedia() {
               Delete
             </Button>
           </Popconfirm>
-          </Space>
-        ),
-      },
-    ];
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <main id="main" className="main">
       <div className="pagetitle">
@@ -191,7 +220,9 @@ function PMedia() {
                     onChange={handleChange}
                     value={data.name}
                     placeholder="Name"
+                    status={errors.name ? "error" : ""}
                   />
+                  {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   Contact*
@@ -200,7 +231,9 @@ function PMedia() {
                     onChange={handleChange}
                     value={data.contact}
                     placeholder="Contact"
+                    status={errors.contact ? "error" : ""}
                   />
+                  {errors.contact && <div style={{ color: "red" }}>{errors.contact}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   Address*
@@ -209,7 +242,9 @@ function PMedia() {
                     onChange={handleChange}
                     value={data.address}
                     placeholder="Address"
+                    status={errors.address ? "error" : ""}
                   />
+                  {errors.address && <div style={{ color: "red" }}>{errors.address}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   State*<br />
@@ -224,6 +259,7 @@ function PMedia() {
                     }
                     onChange={(value) => setData({ ...data, stateid: value })}
                   />
+                  {errors.stateid && <div style={{ color: "red" }}>{errors.stateid}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   GST No
@@ -232,7 +268,9 @@ function PMedia() {
                     onChange={handleChange}
                     value={data.gstno}
                     placeholder="GST No"
+                    status={errors.gstno ? "error" : ""}
                   />
+                  {errors.gstno && <div style={{ color: "red" }}>{errors.gstno}</div>}
                 </div>
                 <div className="col-lg-12 p-1">
                   <Button onClick={handleSave} type="primary">
@@ -261,7 +299,7 @@ function PMedia() {
         </div>
       </section>
     </main>
-  )
+  );
 }
 
 export default PMedia

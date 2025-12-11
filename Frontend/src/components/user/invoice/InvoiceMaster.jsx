@@ -15,7 +15,6 @@ function InvoiceMaster() {
     const [gstTypes, setGstTypes] = useState([]);
     const [items, setItems] = useState([
         { key: Date.now(), particular: "", quantity: 1, amount: 0, total: 0 },
-        { key: Date.now() + 1, particular: "", quantity: 1, amount: 0, total: 0 },
     ]);
     const [isEditMode, setIsEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -114,13 +113,14 @@ function InvoiceMaster() {
                             invoiceDate: dayjs(invoice.invoiceDate),
                             clientid: invoice.clientid._id,
                             gstType: invoice.gstType,
+                            discount: invoice.discount,
                         });
 
                         setItems(invoice.details || []);
                         setData({
                             ...data,
                             ...invoice,
-                            id: invoice._id, // Ensure the ID is set here
+                            id: invoice._id,
                             invoiceDate: dayjs(invoice.invoiceDate),
                         });
                         setIsEditMode(true);
@@ -154,8 +154,8 @@ function InvoiceMaster() {
     };
 
     const handleDiscountChange = (value) => {
-        const discountPercent = value || 0; // Treat the input as a percentage
-        const discountAmount = (data.amount * discountPercent) / 100; // Calculate the discount amount
+        const discountPercent = value || 0;
+        const discountAmount = (data.amount * discountPercent) / 100;
         const taxableAmount = data.amount - discountAmount;
 
         const cgstAmount = (taxableAmount * data.cgstPercent) / 100;
@@ -166,7 +166,7 @@ function InvoiceMaster() {
 
         setData((prev) => ({
             ...prev,
-            discount: discountPercent, // Store the percentage value
+            discount: discountPercent,
             taxableAmount,
             cgstAmount,
             sgstAmount,
@@ -177,10 +177,26 @@ function InvoiceMaster() {
 
     const handleSave = async () => {
         try {
+            // Validate form fields
+            await form.validateFields();
+
+            // Additional validation for items
+            if (items.length === 0) {
+                message.error("Please add at least one item");
+                return;
+            }
+
+            for (const item of items) {
+                if (!item.particular || item.amount <= 0) {
+                    message.error("Please fill all item particulars and ensure amounts are greater than 0");
+                    return;
+                }
+            }
+
             console.log("Data Before Save:", data);
             console.log("Items Before Save:", items);
 
-            setLoading(true); // Start loading
+            setLoading(true);
             const values = await form.validateFields();
 
             const cgstAmount = parseFloat(((data.taxableAmount * data.cgstPercent) / 100).toFixed(2));
@@ -205,7 +221,7 @@ function InvoiceMaster() {
             console.log("Payload Sent to Backend:", payload);
 
             if (isEditMode) {
-                const response = await axios.put(`http://localhost:8081/invoices/${agencyid}/${id}`, payload); // Use data.id
+                const response = await axios.put(`http://localhost:8081/invoices/${agencyid}/${id}`, payload);
                 console.log("Backend Response:", response.data);
                 message.success("Invoice updated successfully");
             } else {
@@ -221,7 +237,7 @@ function InvoiceMaster() {
                 error.response?.data?.message || "Failed to save invoice. Please check the form and try again."
             );
         } finally {
-            setLoading(false); // Stop loading
+            setLoading(false);
         }
     };
 
@@ -247,7 +263,6 @@ function InvoiceMaster() {
     const handleCancel = () => {
         setItems([
             { key: Date.now(), particular: "", quantity: 1, amount: 0, total: 0 },
-            { key: Date.now() + 1, particular: "", quantity: 1, amount: 0, total: 0 },
         ]);
         setIsEditMode(false);
         setData({
@@ -361,7 +376,7 @@ function InvoiceMaster() {
 
             <Card title="" >
                 <Form form={form} layout="vertical" onFinish={handleSave}>
-                    <Row gutter={[8,4]}>
+                    <Row gutter={[8, 4]}>
                         <Col span={8}>
                             <Form.Item
                                 label="Invoice No"
@@ -374,16 +389,49 @@ function InvoiceMaster() {
                                 validateStatus={invoiceNoExists ? 'error' : ''}
                                 help={invoiceNoExists ? 'Invoice number already exists' : ''}
                             >
-                                <Input onChange={handleInvoiceNoChange} placeholder="Enter invoice number" style={{ width: '230px' }}/>
+                                <Input onChange={handleInvoiceNoChange} placeholder="Enter invoice number" style={{ width: '230px' }} />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Invoice Date" name="invoiceDate" rules={[{ required: true }]} style={{ marginBottom: '8px' }}>
-                                <DatePicker style={{ width: "60%" , backgroundColor: '#f48fb1', borderColor: '#9b59b6'}} format="DD/MM/YYYY" />
+                            <Form.Item
+                                label="Invoice Date"
+                                name="invoiceDate"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please select invoice date'
+                                    },
+                                    {
+                                        validator: (_, value) => {
+                                            if (value && value > dayjs()) {
+                                                return Promise.reject('Invoice date cannot be in the future');
+                                            }
+                                            return Promise.resolve();
+                                        }
+                                    }
+                                ]}
+                                style={{ marginBottom: '8px' }}
+                            >
+                                <DatePicker
+                                    style={{ width: "60%", backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
+                                    format="DD/MM/YYYY"
+                                    disabledDate={(current) => current && current < dayjs().startOf('day')}
+                                />
+
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="clientid" label="Client" rules={[{ required: true }]} style={{ marginBottom: '8px' }}>
+                            <Form.Item
+                                name="clientid"
+                                label="Client"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please select a client'
+                                    }
+                                ]}
+                                style={{ marginBottom: '8px' }}
+                            >
                                 <Select
                                     placeholder="Select Client"
                                     style={{ width: '230px' }}
@@ -411,31 +459,60 @@ function InvoiceMaster() {
                     <Row gutter={16}>
                         <Col span={8}>
                             <Form.Item label="Amount">
-                                <InputNumber style={{ width: "230px",backgroundColor: '#d1c4e9', borderColor: '#9b59b6', }} value={data.amount} readOnly />
+                                <InputNumber style={{ width: "230px", backgroundColor: '#d1c4e9', borderColor: '#9b59b6', }} value={data.amount} readOnly />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="Discount (%)">
+                            <Form.Item
+                                label="Discount (%)"
+                                name="discount"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please enter discount percentage'
+                                    },
+                                    {
+                                        type: 'number',
+                                        min: 0,
+                                        max: 100,
+                                        message: 'Discount must be between 0 and 100%'
+                                    }
+                                ]}
+                            >
                                 <InputNumber
                                     style={{ width: '230px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
                                     value={data.discount}
                                     min={0}
-                                    max={100} // Optional: Limit the discount to 100%
+                                    max={100}
                                     onChange={handleDiscountChange}
                                 />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item label="Taxable Amount">
-                                <InputNumber style={{ width: "230px" ,backgroundColor: '#d1c4e9', borderColor: '#9b59b6'}} value={data.taxableAmount} readOnly />
+                                <InputNumber style={{ width: "230px", backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }} value={data.taxableAmount} readOnly />
                             </Form.Item>
                         </Col>
                     </Row>
 
-                    <Row gutter={[8,4]}>
+                    <Row gutter={[8, 4]}>
                         <Col span={8}>
-                            <Form.Item label="GST Type" name="gstType" rules={[{ required: true }]} style={{ width: '230px', backgroundColor: '#f48fb1', borderColor: '#9b59b6', marginBottom: '8px' }}>
-                                <Select placeholder="Select GST Type" onChange={handleGstTypeChange} options={gstTypes} />
+                            <Form.Item
+                                label="GST Type"
+                                name="gstType"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please select GST type'
+                                    }
+                                ]}
+                                style={{ width: '230px', backgroundColor: '#f48fb1', borderColor: '#9b59b6', marginBottom: '8px' }}
+                            >
+                                <Select
+                                    placeholder="Select GST Type"
+                                    onChange={handleGstTypeChange}
+                                    options={gstTypes}
+                                />
                             </Form.Item>
                         </Col>
                         <Col span={8}>
@@ -456,7 +533,7 @@ function InvoiceMaster() {
                         <Col span={8}>
                             <Form.Item label="Bill Amount" style={{ marginBottom: '10px' }}>
                                 <InputNumber
-                                    style={{ width: "230px",backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
+                                    style={{ width: "230px", backgroundColor: '#d1c4e9', borderColor: '#9b59b6' }}
                                     readOnly
                                     value={parseFloat((data.taxableAmount + (data.taxableAmount * (data.cgstPercent + data.sgstPercent + data.igstPercent) / 100)).toFixed(2))}
                                 />
@@ -466,7 +543,7 @@ function InvoiceMaster() {
 
                     <Row justify="center" gutter={16}>
                         <Col>
-                            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} >
+                            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={loading}>
                                 {isEditMode ? "Update" : "Save"}
                             </Button>
                         </Col>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Modal, Input, Table, DatePicker, Popconfirm, message } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -12,15 +12,16 @@ function InvoicePayment() {
     const [paymentDate, setPaymentDate] = useState(dayjs());
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
+    const [descError, setDescError] = useState('');
+    const [amountError, setAmountError] = useState('');
     const { id } = useParams();
 
-    // Fetch invoice by emediaroid
     const fetchInvoice = async (invoiceId) => {
         try {
             const res = await axios.get(`http://localhost:8081/invoices/${invoiceId}`);
             setInvoice(res.data.data);
         } catch (err) {
-            // Optionally show error
+            message.error('Failed to fetch invoice.');
         }
     };
 
@@ -39,24 +40,36 @@ function InvoicePayment() {
                     okText="Yes"
                     cancelText="No"
                 >
-                    <Button
-                        type="primary"
-                        danger
-                        icon={<DeleteOutlined />}
-                        size='small'
-                    />
+                    <Button type="primary" danger icon={<DeleteOutlined />} size='small' />
                 </Popconfirm>
             ),
             width: '5%',
         },
     ];
 
-    // Save payment handler
     const handleSavePayment = async () => {
-         if (!paymentDate || !description || !amount) {
-            message.error('Please fill all payment fields.');
+        let hasError = false;
+
+        if (!description.trim()) {
+            setDescError('Description is required');
+            hasError = true;
+        } else {
+            setDescError('');
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
+            setAmountError('Amount must be greater than 0');
+            hasError = true;
+        } else {
+            setAmountError('');
+        }
+
+        if (hasError) {
+            message.error('Please correct the errors.');
             return;
         }
+
         try {
             await axios.patch(
                 `http://localhost:8081/invoices/${invoice._id}/add-payment`,
@@ -64,12 +77,11 @@ function InvoicePayment() {
                     payment: {
                         paymentDate: paymentDate.toISOString(),
                         description,
-                        amount: parseFloat(amount),
+                        amount: parsedAmount,
                     },
                 }
             );
             message.success('Payment saved!');
-            // Optionally, refresh invoice data to update table
             fetchInvoice(id);
             setDescription('');
             setAmount('');
@@ -77,10 +89,8 @@ function InvoicePayment() {
         } catch (err) {
             message.error('Failed to save payment.');
         }
-
     };
 
-    // Delete payment handler
     const handleDeletePayment = async (paymentId) => {
         try {
             await axios.patch(
@@ -88,7 +98,6 @@ function InvoicePayment() {
                 { paymentId }
             );
             message.success('Payment deleted!');
-            // Optionally, refresh invoice data to update table
             fetchInvoice(id);
         } catch (err) {
             message.error('Failed to delete payment.');
@@ -111,29 +120,12 @@ function InvoicePayment() {
                 bodyStyle={{ padding: 32 }}
                 style={{ right: 100, top: 120, position: 'absolute' }}
             >
-                <h4
-                    style={{
-                        color: '#ff9800',
-                        textAlign: 'center',
-                        marginBottom: 24,
-                        fontWeight: 'bold',
-                    }}
-                >
+                <h4 style={{ color: '#ff9800', textAlign: 'center', marginBottom: 24, fontWeight: 'bold' }}>
                     Invoice Payment Details
                 </h4>
                 <hr />
                 <div style={{ borderBottom: '1px solid #eee', marginBottom: 16, paddingBottom: 16 }}>
-                    {/* Row 1 */}
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'start',
-                            fontWeight: 600,
-                            marginBottom: 12,
-                            gap: '250px', // Adjust gap between Invoice No and Invoice Date
-                        }}
-                    >
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'start', fontWeight: 600, marginBottom: 12, gap: '250px' }}>
                         <div style={{ minWidth: '200px' }}>
                             <span style={{ fontWeight: 'bold' }}>Invoice No : </span>{invoice?.invoiceNo || ''}
                         </div>
@@ -142,33 +134,14 @@ function InvoicePayment() {
                         </div>
                     </div>
 
-                    {/* Row 2 */}
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'space-between',
-                            fontWeight: 600,
-                        }}
-                    >
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', fontWeight: 600 }}>
                         <div style={{ minWidth: '300px', marginLeft: 0 }}>
                             <span style={{ fontWeight: 'bold' }}>Client : </span>{invoice?.clientid.name || ''}
                         </div>
-
                     </div>
 
-                    {/* Row 3 */}
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'start',
-                            fontWeight: 600,
-                            marginBottom: 12,
-                            gap: '150px', // Adjust gap between Invoice No and Invoice Date
-                        }}
-                    >
-                        <div style={{ minWidth: '300px', marginTop: 16 }} >
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'start', fontWeight: 600, marginBottom: 12, gap: '150px' }}>
+                        <div style={{ minWidth: '300px', marginTop: 16 }}>
                             <span style={{ fontWeight: 'bold' }}>Invoice Amount : </span>{invoice?.billAmount || ''}
                         </div>
                         <div style={{ minWidth: '430px', marginTop: 16 }}>
@@ -183,15 +156,28 @@ function InvoicePayment() {
                         </div>
                     </div>
                 </div>
+
                 <div style={{ display: 'flex', gap: 24 }}>
                     <div style={{ flex: 1 }}>
                         <div style={{ marginBottom: 16 }}>
                             <label>Payment Date</label>
-                            <DatePicker style={{ width: '100%' }} defaultValue={dayjs()} format="DD/MM/YYYY" value={paymentDate} onChange={setPaymentDate} />
+                            <DatePicker
+                                style={{ width: '100%' }}
+                                defaultValue={dayjs()}
+                                format="DD/MM/YYYY"
+                                value={paymentDate}
+                                onChange={setPaymentDate}
+                            />
                         </div>
                         <div style={{ marginBottom: 16 }}>
                             <label>Description</label>
-                            <Input value={description} onChange={e => setDescription(e.target.value)} />
+                            <Input
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                status={descError ? 'error' : ''}
+                                placeholder="Enter description"
+                            />
+                            {descError && <div style={{ color: 'red', fontSize: 12 }}>{descError}</div>}
                         </div>
                         <div style={{ marginBottom: 16 }}>
                             <label>Amount</label><br />
@@ -200,7 +186,10 @@ function InvoicePayment() {
                                 value={amount}
                                 style={{ width: '50%' }}
                                 onChange={e => setAmount(e.target.value)}
+                                status={amountError ? 'error' : ''}
+                                placeholder="Enter amount"
                             />
+                            {amountError && <div style={{ color: 'red', fontSize: 12 }}>{amountError}</div>}
                         </div>
                     </div>
                     <div style={{ flex: 1 }}>
@@ -227,7 +216,7 @@ function InvoicePayment() {
                 </div>
             </Modal>
         </main>
-    )
-};
+    );
+}
 
-export default InvoicePayment
+export default InvoicePayment;

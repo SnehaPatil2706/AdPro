@@ -16,6 +16,7 @@ function EMediaROBilling() {
   const [clients, setClients] = useState([]);
   const { RangePicker } = DatePicker;
   const [gsts, setGsts] = useState([]);
+  const [errors, setErrors] = useState({});
   const [items, setItems] = useState([
     {
       key: Date.now(),
@@ -58,6 +59,47 @@ function EMediaROBilling() {
     iigstamount: 0,
   });
   const [roInvoices, setRoInvoices] = useState([]);
+
+  const validateForm = () => {
+    const values = form.getFieldsValue();
+    const newErrors = {};
+
+    // Validate RO Date
+    if (!values.invoicedate) {
+      newErrors.invoicedate = 'invoice date is required';
+    }
+
+    // Validate Client
+    if (!values.billclientid) {
+      newErrors.billclientid = 'Client is required';
+    }
+
+    // Validate Commission Percentage
+    if (!values.icomissionpercent) {
+      newErrors.icomissionpercent = 'Commission percentage is required';
+    } else if (isNaN(values.icomissionpercent)) {
+      newErrors.icomissionpercent = 'Commission must be a number';
+    } else if (values.icomissionpercent < 0 || values.icomissionpercent > 100) {
+      newErrors.icomissionpercent = 'Commission must be between 0 and 100';
+    }
+
+    // Validate discount Percentage
+    if (!values.discountpercent) {
+      newErrors.discountpercent = 'discount percentage is required';
+    } else if (isNaN(values.discountpercent)) {
+      newErrors.discountpercent = 'discount must be a number';
+    } else if (values.discountpercent < 0 || values.discountpercent > 100) {
+      newErrors.discountpercent = 'discount must be between 0 and 100';
+    }
+
+    // Validate GST Type if amount is non-zero
+    if (!values.invoicegstid) {
+      newErrors.invoicegstid = 'gst type is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleCancel = () => {
     navigate("/emedia/emediaROList");
@@ -182,7 +224,6 @@ function EMediaROBilling() {
           };
 
           form.setFieldsValue(formattedData);
-
 
           // Also update data state for label display
           setData(prev => ({
@@ -394,6 +435,11 @@ function EMediaROBilling() {
   };
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      message.error('Please fix the form errors before submitting');
+      return;
+    }
+
     try {
       setLoading(true);
       const values = await form.validateFields();
@@ -546,10 +592,40 @@ function EMediaROBilling() {
     handleDiscountPercentChange();
   };
 
+  const fetchLastInvoiceNumber = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/emediaroinvoices/last-invoice');
+      if (response.data && response.data.status === 'success') {
+        const lastInvoiceNo = response.data.data?.invoiceno || 0;
+        return parseInt(lastInvoiceNo) + 1;
+      }
+      return 1; // Default starting number
+    } catch (err) {
+      console.error("Error fetching last invoice number:", err);
+      return 1; // Fallback starting number
+    }
+  };
+
   useEffect(() => {
-    loadData();
-    loadROData();
-    loadROInvoices();
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        loadData();
+        loadROData();
+        await loadROInvoices();
+
+        // Only set new invoice number if not in edit mode (no existing invoice)
+        if (!roInvoices._id) {
+          const nextInvoiceNo = await fetchLastInvoiceNumber();
+          form.setFieldsValue({ invoiceno: nextInvoiceNo });
+          setData(prev => ({ ...prev, invoiceno: nextInvoiceNo }));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, [id]);
 
   return (
@@ -581,17 +657,18 @@ function EMediaROBilling() {
                   <Form.Item label="Invoice No" name="invoiceno" style={{ marginBottom: '8px' }}>
                     <Input
                       id="invoiceNo"
-                      placeholder=""
+                      placeholder="Auto-generated"
                       style={{ width: "100%" }}
-                      type="number"
-                      value={data.invoiceno}
-                      onChange={(e) => setData({ ...data, invoiceno: Number(e.target.value) })}
+                      readOnly
                     />
                   </Form.Item>
                 </Col>
                 <Col span={4}>
-                  <Form.Item label="Invoice Date" name="invoicedate" style={{ marginBottom: '8px' }}>
-                    <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+                  <Form.Item label="Invoice Date" name="invoicedate" style={{ marginBottom: '8px' }}
+                    validateStatus={errors.invoicedate ? 'error' : ''}
+                    help={errors.invoicedate}>
+                    <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY"
+                      disabledDate={(current) => current && current < dayjs().startOf('day')} />
                   </Form.Item>
                 </Col>
               </Row>
@@ -641,7 +718,9 @@ function EMediaROBilling() {
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item label="Billing Against Client" name="billclientid" style={{ marginBottom: '8px' }}>
+                      <Form.Item label="Billing Against Client" name="billclientid" style={{ marginBottom: '8px' }}
+                        validateStatus={errors.billclientid ? 'error' : ''}
+                        help={errors.billclientid}>
                         <Select style={{ width: '120%' }} options={clients}
                           value={data.billclientid}
                           onChange={(value) => setData({ ...data, billclientid: value })} />
@@ -711,7 +790,9 @@ function EMediaROBilling() {
                     </Form.Item>
                   </Col>
                   <Col span={4}>
-                    <Form.Item label="Commision (%)" name="icomissionpercent" style={{ marginBottom: '8px' }}>
+                    <Form.Item label="Commision (%)" name="icomissionpercent" style={{ marginBottom: '8px' }}
+                      validateStatus={errors.icomissionpercent ? 'error' : ''}
+                      help={errors.icomissionpercent}>
                       <Input
                         style={{ width: '80%' }}
                         onChange={handleCommissionOrTotalChargesChange}
@@ -738,7 +819,9 @@ function EMediaROBilling() {
               <Divider />
               <Row gutter={[13]}>
                 <Col span={8}>
-                  <Form.Item label="Discount(%)" name="discountpercent" style={{ marginBottom: '8px' }}>
+                  <Form.Item label="Discount(%)" name="discountpercent" style={{ marginBottom: '8px' }}
+                    validateStatus={errors.discountpercent ? 'error' : ''}
+                    help={errors.discountpercent}>
                     <Input
                       type="number"
                       style={{ width: '80%' }}
@@ -759,7 +842,9 @@ function EMediaROBilling() {
               </Row>
               <Row gutter={[8, 4]}>
                 <Col span={5}>
-                  <Form.Item label="GST Tax Type" name="invoicegstid">
+                  <Form.Item label="GST Tax Type" name="invoicegstid"
+                    validateStatus={errors.invoicegstid ? 'error' : ''}
+                    help={errors.invoicegstid}>
                     <Select
                       showSearch
                       allowClear

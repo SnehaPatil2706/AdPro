@@ -7,13 +7,14 @@ import { Card, Form, Row, Col, Input, Button, Table, Select, DatePicker, InputNu
 import { SaveOutlined, PrinterOutlined, PlusOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Typography } from "antd";
 import dayjs from "dayjs";
-
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat);
 
 const { Title } = Typography;
 const { Option } = Select;
 
 function PMediaROMaster() {
- const { id } = useParams();
+  const { id } = useParams();
   const agency = JSON.parse(localStorage.getItem("agency")) || null;
   const agencyid = agency?._id;
   const [form] = Form.useForm();
@@ -22,10 +23,14 @@ function PMediaROMaster() {
   const [clients, setClients] = useState([]);
   const [papers, setPapers] = useState([]);
   const [gsts, setGsts] = useState([]);
+  const [errors, setErrors] = useState({
+    form: {},   // For form-level errors
+    table: {}   // For table row errors
+  });
   const [items, setItems] = useState([
     {
       srno: 1,
-      date: '',                      // Use Date object or dayjs/moment if using DatePicker
+      date: null,                      // Use Date object or dayjs/moment if using DatePicker
       caption: '',
       position: '',
       hue: '',
@@ -48,10 +53,9 @@ function PMediaROMaster() {
       gsttotal: 0,
       totalcharges: 0,
       chequeno: '',
-      chequedate: ''                // Use Date object or dayjs/moment
+      chequedate: null,              // Use Date object or dayjs/moment
     }
   ]);
-
   const [originalData, setOriginalData] = useState([]);
   const navigate = useNavigate();
   const [data, setData] = useState({
@@ -75,11 +79,10 @@ function PMediaROMaster() {
     commissionTotal: 0,
     ccpercent: 0,
     ccamount: 0,
+    cgstpercent: 0,
+    sgstpercent: 0,
+    igstpercent: 0,
   });
-
-  console.log(data);
-  
-
   const [roTotal, setRoTotal] = useState(0);
   const [commissionTotal, setCommissionTotal] = useState(0);
   const [gst, setGst] = useState(0);
@@ -91,6 +94,120 @@ function PMediaROMaster() {
   const [ccAmount, setCcAmount] = useState(0);
   const [ccpercent, setCcpercent] = useState(0);
 
+  const validateForm = () => {
+    const values = form.getFieldsValue();
+    const newErrors = {};
+
+    // Validate RO Date
+    if (!values.rodate) {
+      newErrors.rodate = 'RO date is required';
+    }
+
+    // Validate Client
+    if (!values.clientid) {
+      newErrors.clientid = 'Client is required';
+    }
+
+    // Validate Newspaper
+    if (!values.pmediaid) {
+      newErrors.pmediaid = 'Newspaper is required';
+    }
+
+    // Validate editions
+    if (!values.editions) {
+      newErrors.editions = 'editions is required';
+    } else if (!/^[A-Za-z\s]+$/.test(values.editions)) {
+      newErrors.editions = 'editions can only contain letters';
+    }
+
+    // Validate GST Type if amount is non-zero
+    if (!values.gstid) {
+      newErrors.gstid = 'gst type is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // For table validation 
+  const validateTable = () => {
+    const tableErrors = {};
+    let isValid = true;
+
+    items.forEach((item, index) => {
+      // Date validation
+      if (!item.date) {
+        tableErrors[`date_${index}`] = 'Date is required';
+        isValid = false;
+      }
+
+      // Position validation
+      if (!item.position || item.position.trim() === '') {
+        tableErrors[`position_${index}`] = 'Position is required';
+        isValid = false;
+      } else if (item.position.length > 50) {
+        tableErrors[`position_${index}`] = 'Position must be less than 50 characters';
+        isValid = false;
+      }
+
+      // Height validation
+      if (!item.height || isNaN(item.height) || item.height <= 0) {
+        tableErrors[`height_${index}`] = 'Valid height is required';
+        isValid = false;
+      }
+
+      // Width validation
+      if (!item.width || isNaN(item.width) || item.width <= 0) {
+        tableErrors[`width_${index}`] = 'Valid width is required';
+        isValid = false;
+      }
+
+      // Paid/Bonus validation
+      if (!item.paidBonus) {
+        tableErrors[`paidBonus_${index}`] = 'Please select Paid/Bonus';
+        isValid = false;
+      }
+
+      // Rate validation
+      if (!item.rate || isNaN(item.rate) || item.rate <= 0) {
+        tableErrors[`rate_${index}`] = 'Valid rate is required';
+        isValid = false;
+      }
+
+      // Commission % validation
+          if (item.commissionpercent === undefined || item.commissionpercent === null || 
+        isNaN(item.commissionpercent) || item.commissionpercent < 0 || item.commissionpercent > 100) {
+      tableErrors[`commissionpercent_${index}`] = 'Must be between 0-100%';
+      isValid = false;
+    }
+
+
+      // Cheque validation - only if Paid is selected
+    if (item.paidBonus === 'paid') {
+      if (!item.chequeno || item.chequeno.trim() === '') {
+        tableErrors[`chequeno_${index}`] = 'Cheque number is required';
+        isValid = false;
+      } else if (!/^[0-9]+$/.test(item.chequeno)) {
+        tableErrors[`chequeno_${index}`] = 'Only numbers allowed';
+        isValid = false;
+      }
+
+      if (!item.chequedate) {
+        tableErrors[`chequedate_${index}`] = 'Cheque date is required';
+        isValid = false;
+      } else if (dayjs(item.chequedate).isBefore(dayjs(), 'day')) {
+        tableErrors[`chequedate_${index}`] = 'Cannot be past date';
+        isValid = false;
+      }
+    }
+
+
+
+    });
+
+    setErrors(prev => ({ ...prev, table: tableErrors }));
+    return isValid;
+  };
 
   <DatePicker
     value={data.rodate ? moment(data.rodate) : null}
@@ -102,7 +219,6 @@ function PMediaROMaster() {
     }
     format="DD/MM/YYYY"
   />
-
 
   const fetchClients = async () => {
     try {
@@ -117,7 +233,7 @@ function PMediaROMaster() {
 
   const fetchPapers = async () => {
     try {
-      const response = await axios.get(`http://localhost:8081/pmedias/${agencyid}`);
+      const response = await axios.get(`http://localhost:8081/pmedia`);
       if (Array.isArray(response.data?.data)) {
         setPapers(response.data.data);
         setDataSource(response.data.data);
@@ -166,49 +282,36 @@ function PMediaROMaster() {
     }));
   };
 
-  // function handleChange(e) {
-  //   setData({ ...data, [e.target.id]: e.target.value });
-  // }
-
-  // function loadData() {
-  //   setData({
-  //     id: "",
-  //     agencyid: agency?._id,             
-  //     rono: '',
-  //     rodate: null,             // Use `moment()` or `dayjs()` if you're using Ant Design DatePicker
-  //     clientid: '',             // ObjectId string
-  //     pmediaid: '',             // ObjectId string
-  //     gstid: '',
-  //   })
-  // }
 
   useEffect(() => {
     const fetchRecord = async () => {
       if (id) {
         try {
-          console.log("Fetching record for ID:", id);
           setLoading(true);
 
           // Fetch clients first
           const clientsResponse = await axios.get(`http://localhost:8081/clients/${agencyid}`);
           if (clientsResponse.data?.data) {
-            console.log("Clients fetched:", clientsResponse.data.data);
             setClients(clientsResponse.data.data);
           }
 
           // Fetch the record
-          const response = await axios.get(`http://localhost:8081/pmediaros/${agencyid}/${id}`);
+          const response = await axios.get(`http://localhost:8081/pmediaros/${id}`);
           if (response.data && response.data.status === "success") {
             const record = response.data.data;
-            console.log("Record fetched:", record);
+            console.log("Record fetched:", response.data.data);
 
             // Populate form fields
             form.setFieldsValue({
               ...record,
+              pmediaid: record.pmediaid?._id || record.pmediaid || null,
               cgstTotal: record.cgstTotal,
               sgstTotal: record.sgstTotal,
               igstTotal: record.igstTotal,
               allgst: record.allgst,
+              cgstpercent: record.cgstpercent,
+              sgstpercent: record.sgstpercent,
+              igstpercent: record.igstpercent,
               clientid: record.clientid?._id || null, // Extract the _id for the Select component
               rodate: record.rodate ? dayjs(record.rodate) : null,
               chequedate: record.chequedate ? dayjs(record.chequedate) : null,
@@ -218,6 +321,12 @@ function PMediaROMaster() {
             setData({
               ...data,
               ...record,
+              agencyid: agency?._id || "",
+
+              cgstTotal: record.cgstTotal,
+              sgstTotal: record.sgstTotal,
+              igstTotal: record.igstTotal,
+              allgst: record.allgst,
               id: record._id, // Ensure the ID is set
             });
 
@@ -256,60 +365,8 @@ function PMediaROMaster() {
     fetchRecord();
   }, [id, agencyid]);
 
-  const handleSave = async () => {
-    try {
-      setLoading(true); // Show loading state
-      const values = await form.validateFields(); // Validate form fields
-
-      // Prepare the payload
-      const payload = {
-        ...data,
-        ...values,
-        robillamount: roBillTotal, // Value from setRoBillTotal
-        ccamount: ccAmount,
-        cgstTotal: cgstTotal,
-        sgstTotal: sgstTotal,
-        igstTotal: igstTotal,
-        allgst: gstTotal,
-        totalcharges: roTotal,
-        commissionTotal: commissionTotal,
-        items: items.map(item => ({
-          ...item,
-          date: item.date instanceof dayjs ? item.date.toDate() : item.date,
-          chequedate: item.chequedate instanceof dayjs ? item.chequedate.toDate() : item.chequedate,
-        })) || [],
-        rodate: values.rodate?.toDate?.() || values.rodate || null,
-        chequedate: values.chequedate?.toDate?.() || values.chequedate || null,
-      };
-
-      console.log("Payload:", payload);
-
-      if (isEditMode) {
-        // Update existing record
-        const response = await axios.put(`http://localhost:8081/pmediaros/${agencyid}/${id}`, payload);
-        console.log("Update Response:", response.data);
-        message.success("Record updated successfully");
-      } else {
-        // Create new record
-        const response = await axios.post("http://localhost:8081/pmediaros", payload);
-        console.log("Create Response:", response.data);
-        message.success("Record created successfully");
-      }
-
-      form.resetFields();
-      navigate("/pmedia/pmediaROList");
-    } catch (error) {
-      console.error("Save error:", error);
-      message.error(
-        error.response?.data?.message || "Failed to save the record. Please check the form and try again."
-      );
-    } finally {
-      setLoading(false); // Hide loading state
-    }
-  };
-
   const handleCancel = () => {
-    navigate("/pmedia/pmediaROList");
+    navigate("/p-media/pMediaROList");
   }
 
   const handleInvoiceNoChange = (e) => {
@@ -322,7 +379,6 @@ function PMediaROMaster() {
     fetchPapers();
     fetchGsts();
   }, []); // Add an empty dependency array
-
 
   const [dataSource, setDataSource] = useState([
     {
@@ -371,6 +427,13 @@ function PMediaROMaster() {
       const updatedItems = [...prevItems];
       const updatedItem = { ...updatedItems[index] };
 
+      // Special handling for date fields
+      if (field === 'date' || field === 'chequedate') {
+        updatedItem[field] = value; // Store the Day.js object directly
+        updatedItems[index] = updatedItem;
+        return updatedItems;
+      }
+
       const parseNumber = (val) => {
         const num = parseFloat(val);
         return isNaN(num) ? 0 : num;
@@ -383,10 +446,21 @@ function PMediaROMaster() {
 
       if (field === "width" || field === "height") {
         updatedItem.size[field] = parseNumber(value);
+        updatedItem[field] = parseNumber(value); // <-- update root-level field too!
+
       } else if (["caption", "position", "hue", "chequeno", "paidBonus"].includes(field)) {
         updatedItem[field] = value; // keep as string
       } else {
         updatedItem[field] = parseNumber(value); // number fields
+      }
+
+      // Clear any existing error for this field when it changes
+      if (field === 'position' && value && value.trim() !== '') {
+        setErrors(prev => {
+          const newTableErrors = { ...prev.table };
+          delete newTableErrors[`position_${index}`];
+          return { ...prev, table: newTableErrors };
+        });
       }
 
 
@@ -472,17 +546,106 @@ function PMediaROMaster() {
     });
   };
 
+  const handleSave = async () => {
+
+    const isFormValid = validateForm();
+    const isTableValid = validateTable();
+
+    if (!isFormValid || !isTableValid) {
+      message.error('Please fix all errors before submitting');
+      return;
+    }
+
+
+
+    try {
+      setLoading(true); // Show loading state
+      const values = await form.validateFields(); // Validate form fields
+
+          const formattedItems = items.map(item => ({
+      ...item,
+      date: item.date ? item.date.format('YYYY-MM-DD') : null,
+      chequedate: item.chequedate ? item.chequedate.format('YYYY-MM-DD') : null,
+      // Ensure size object is properly included
+      size: {
+        width: item.width || 0,
+        height: item.height || 0
+      }
+    }));
+
+      const payload = {
+        ...data,
+        ...values,
+        robillamount: roBillTotal, // Value from setRoBillTotal
+        ccamount: ccAmount,
+        cgstpercent: items[0].cgstpercent,
+        sgstpercent: items[0].sgstpercent,
+        igstpercent: items[0].igstpercent,
+        cgstTotal: cgstTotal,
+        sgstTotal: sgstTotal,
+        igstTotal: igstTotal,
+        allgst: gstTotal,
+        totalcharges: roTotal,
+        commissionTotal: commissionTotal,
+        items: items.map(item => ({
+          ...item,
+          date: item.date ? dayjs(item.date).format('YYYY-MM-DD') : null,
+          chequedate: item.chequedate ? dayjs(item.chequedate).toDate() : null,
+
+        })) || [],
+        rodate: values.rodate?.toDate?.() || values.rodate || null,
+
+      };
+
+      console.log("Payload:", payload);
+
+      if (isEditMode) {
+
+        // Update existing record
+        const response = await axios.put(`http://localhost:8081/pmediaros/${id}`, payload);
+        console.log("Update Response:", response.data);
+        message.success("Record updated successfully");
+      } else {
+        // Create new record
+        const response = await axios.post("http://localhost:8081/pmediaros", payload);
+        console.log("Create Response:", response.data);
+        message.success("Record created successfully");
+      }
+
+      form.resetFields();
+      navigate("/p-media/pMediaROList");
+    } catch (error) {
+      console.error("Save error:", error);
+      message.error(
+        error.response?.data?.message || "Failed to save the record. Please check the form and try again."
+      );
+    } finally {
+      setLoading(false); // Hide loading state
+    }
+  };
+
   const handleBonusChange = (value, index) => {
     setItems((prevItems) => {
       const updatedItems = [...prevItems];
       updatedItems[index] = {
         ...updatedItems[index],
         paidBonus: value,
-        chequeNo: '',
-        chequeDate: null,
+      chequeno: value === 'paid' ? updatedItems[index].chequeno : '',
+      chequedate: value === 'paid' ? updatedItems[index].chequedate : null,
+
       };
       return updatedItems;
     });
+
+      // Clear cheque-related errors when switching to bonus
+  setErrors(prev => {
+    const newTableErrors = {...prev.table};
+    delete newTableErrors[`chequeno_${index}`];
+    delete newTableErrors[`chequedate_${index}`];
+    return {...prev, table: newTableErrors};
+  });
+
+
   };
 
   const handleAddRow = () => {
@@ -492,23 +655,26 @@ function PMediaROMaster() {
       caption: '',
       position: '',
       hue: '',
-      width: '',
-      height: '',
-      area: '',
-      rate: '',
-      bonusPaid: '',
-      charges: '',
-      commissionPercent: '',
-      commissionAmount: '',
-      cgst: '',
-      sgst: '',
-      igst: '',
-      gst: '',
-      totalCharges: '',
-      chequeNo: '',
-      chequeDate: null,
+      size: { width: 0, height: 0 }, // <-- Add this
+      width: 0,                      // <-- Set as number
+      height: 0,                     // <-- Set as number
+      area: 0,
+      rate: 0,
+      paidBonus: '',
+      charges: 0,
+      commissionpercent: 0,
+      commissionamount: 0,
+      cgstpercent: 0,
+      cgstamount: 0,
+      sgstpercent: 0,
+      sgstamount: 0,
+      igstpercent: 0,
+      igstamount: 0,
+      gsttotal: 0,
+      totalcharges: 0,
+      chequeno: '',
+      chequedate: '',
     };
-
 
     setItems((prevItems) => {
       const updatedItems = [...prevItems, newItem];
@@ -536,14 +702,38 @@ function PMediaROMaster() {
       title: "Date",
       width: 120,
       dataIndex: "date",
-      render: (_, record, index) => (
-        <DatePicker
-          format="DD/MM/YYYY"
-          style={{ width: '100%', backgroundColor: '#f8d7da' }}
-          value={record.date ? moment(record.date, 'DD/MM/YYYY') : null}
-          onChange={(date, dateString) => handleInputChange(index, 'date', dateString)}
-        />
-      ),
+      render: (_, record, index) => {
+        const error = errors.table[`date_${index}`];
+        return (
+          <div>
+            <DatePicker
+              format="DD/MM/YYYY"
+              style={{
+                width: '100%',
+                backgroundColor: '#f8d7da',
+                borderColor: error ? '#ff4d4f' : undefined
+              }}
+              value={record.date ? dayjs(record.date) : null}
+              onChange={(date) => {
+                handleInputChange(index, 'date', date);
+                // Clear error when date is selected
+                if (date) {
+                  setErrors(prev => {
+                    const newTableErrors = { ...prev.table };
+                    delete newTableErrors[`date_${index}`];
+                    return { ...prev, table: newTableErrors };
+                  });
+                }
+              }}
+            />
+            {error && (
+              <div style={{ color: '#ff4d4f', fontSize: 12, marginTop: 4 }}>
+                {error}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "Caption",
@@ -562,14 +752,37 @@ function PMediaROMaster() {
       title: "Position",
       width: 110,
       dataIndex: "position",
-      render: (_, record, index) => (
-        <Input
-          value={record.position}
-          placeholder="Position"
-          style={{ backgroundColor: '#f8d7da' }}
-          onChange={e => handleInputChange(index, 'position', e.target.value)}
-        />
-      ),
+      render: (_, record, index) => {
+        const error = errors.table[`position_${index}`];
+        return (
+          <div>
+            <Input
+              value={record.position}
+              placeholder="Position"
+              style={{
+                backgroundColor: '#f8d7da',
+                borderColor: error ? '#ff4d4f' : undefined
+              }}
+              onChange={(e) => {
+                handleInputChange(index, 'position', e.target.value);
+                // Clear error when position is entered
+                if (e.target.value.trim() !== '') {
+                  setErrors(prev => {
+                    const newTableErrors = { ...prev.table };
+                    delete newTableErrors[`position_${index}`];
+                    return { ...prev, table: newTableErrors };
+                  });
+                }
+              }}
+            />
+            {error && (
+              <div style={{ color: '#ff4d4f', fontSize: 12, marginTop: 4 }}>
+                {error}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "Hue",
@@ -592,31 +805,74 @@ function PMediaROMaster() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div><strong>Size</strong></div>
           <div style={{ marginTop: 4, display: 'flex', gap: 20 }}>
-            <input style={{ padding: '2px 6px' }} placeholder="Width" />
-            <input style={{ padding: '2px 6px' }} placeholder="Height" />
+            <span style={{ color: '#ff4d4f' }}>Width</span>
+            <span style={{ color: '#ff4d4f' }}>Height</span>
           </div>
         </div>
       ),
-      // dataIndex: "size",
       width: 50,
-      render: (_, record, index) => (
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <Input
-            value={record.width}
-            placeholder="width"
-            dataIndex="width"
-            style={{ backgroundColor: '#f8d7da' }}
-            onChange={e => handleInputChange(index, 'width', e.target.value)}
-          />
-          <Input
-            value={record.height}
-            placeholder="height"
-            dataIndex="height"
-            style={{ backgroundColor: '#f8d7da' }}
-            onChange={e => handleInputChange(index, 'height', e.target.value)}
-          />
-        </div>
-      ),
+      render: (_, record, index) => {
+        const widthError = errors.table[`width_${index}`];
+        const heightError = errors.table[`height_${index}`];
+        return (
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <div>
+              <Input
+                value={record.width}
+                placeholder="width"
+                dataIndex="width"
+                style={{
+                  backgroundColor: '#f8d7da',
+                  padding: '2px 6px',
+                  borderColor: widthError ? '#ff4d4f' : undefined
+                }}
+                onChange={e => {
+                  handleInputChange(index, 'width', e.target.value);
+                  if (e.target.value && !isNaN(e.target.value)) {
+                    setErrors(prev => {
+                      const newTableErrors = { ...prev.table };
+                      delete newTableErrors[`width_${index}`];
+                      return { ...prev, table: newTableErrors };
+                    });
+                  }
+                }}
+              />
+              {widthError && (
+                <div style={{ color: '#ff4d4f', fontSize: 10 }}>
+                  {widthError}
+                </div>
+              )}
+            </div>
+            <div>
+              <Input
+                value={record.height}
+                placeholder="height"
+                dataIndex="height"
+                style={{
+                  backgroundColor: '#f8d7da',
+                  padding: '2px 6px',
+                  borderColor: heightError ? '#ff4d4f' : undefined
+                }}
+                onChange={e => {
+                  handleInputChange(index, 'height', e.target.value);
+                  if (e.target.value && !isNaN(e.target.value)) {
+                    setErrors(prev => {
+                      const newTableErrors = { ...prev.table };
+                      delete newTableErrors[`height_${index}`];
+                      return { ...prev, table: newTableErrors };
+                    });
+                  }
+                }}
+              />
+              {heightError && (
+                <div style={{ color: '#ff4d4f', fontSize: 10 }}>
+                  {heightError}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
 
     {
@@ -629,7 +885,6 @@ function PMediaROMaster() {
           placeholder="area"
           style={{ backgroundColor: '#f8d7da' }}
           readOnly
-        // onChange={e => handleInputChange(index, 'area', e.target.value)}
         />
       ),
     },
@@ -638,37 +893,78 @@ function PMediaROMaster() {
       key: "paidBonus",
       dataIndex: "paidBonus",
       width: 140,
-      render: (text, record, index) => (
-        <Select
-          showSearch
-          allowClear
-          placeholder="Select"
-          value={record.paidBonus}
-          disabled={loading}
-          style={{ width: '100%' }}
-          options={payOptions}
-          onChange={(value) => handleBonusChange(value, index)}
-          filterOption={(input, option) =>
-            option.label.toLowerCase().includes(input.toLowerCase())
-          }
-
-        />
-      ),
+      render: (text, record, index) => {
+        const error = errors.table[`paidBonus_${index}`];
+        return (
+          <div>
+            <Select
+              showSearch
+              allowClear
+              placeholder="Select"
+              value={record.paidBonus}
+              disabled={loading}
+              style={{
+                width: '100%',
+                borderColor: error ? '#ff4d4f' : undefined
+              }}
+              options={payOptions}
+              onChange={(value) => {
+                handleBonusChange(value, index);
+                if (value) {
+                  setErrors(prev => {
+                    const newTableErrors = { ...prev.table };
+                    delete newTableErrors[`paidBonus_${index}`];
+                    return { ...prev, table: newTableErrors };
+                  });
+                }
+              }}
+            />
+            {error && (
+              <div style={{ color: '#ff4d4f', fontSize: 12, marginTop: 4 }}>
+                {error}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
+
     {
       title: "Rate",
       width: 110,
       dataIndex: "rate",
-      render: (_, record, index) => (
-        <Input
-          value={record.rate}
-          placeholder="rate"
-          style={{ backgroundColor: '#f8d7da' }}
-          options={payOptions}
-          onChange={e => handleInputChange(index, 'rate', e.target.value)}
-        />
-      ),
+      render: (_, record, index) => {
+        const error = errors.table[`rate_${index}`];
+        return (
+          <div>
+            <Input
+              value={record.rate}
+              placeholder="rate"
+              style={{
+                backgroundColor: '#f8d7da',
+                borderColor: error ? '#ff4d4f' : undefined
+              }}
+              onChange={e => {
+                handleInputChange(index, 'rate', e.target.value);
+                if (e.target.value && !isNaN(e.target.value)) {
+                  setErrors(prev => {
+                    const newTableErrors = { ...prev.table };
+                    delete newTableErrors[`rate_${index}`];
+                    return { ...prev, table: newTableErrors };
+                  });
+                }
+              }}
+            />
+            {error && (
+              <div style={{ color: '#ff4d4f', fontSize: 12, marginTop: 4 }}>
+                {error}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
+
     {
       title: "Charges",
       width: 110,
@@ -683,19 +979,52 @@ function PMediaROMaster() {
         />
       ),
     },
-    {
-      title: "Com(%)",
-      width: 110,
-      dataIndex: "commissionpercent",
-      render: (_, record, index) => (
-        <Input
+     // Commission % Column
+ {
+  title: "Com(%)",
+  width: 110,
+  dataIndex: "commissionpercent",
+  render: (_, record, index) => {
+    const error = errors.table[`commissionpercent_${index}`];
+    return (
+      <div>
+        <InputNumber
+          min={0}
+          max={100}
           value={record.commissionpercent}
-          placeholder="%"
-          style={{ backgroundColor: '#f8d7da' }}
-          onChange={e => handleInputChange(index, 'commissionpercent', e.target.value)}
+          style={{ 
+            width: '100%',
+            backgroundColor: '#f8d7da',
+            borderColor: error ? '#ff4d4f' : undefined 
+          }}
+          onChange={(value) => {
+            handleInputChange(index, 'commissionpercent', value);
+            // Clear error when valid
+            if (value !== undefined && value !== null && !isNaN(value) && value >= 0 && value <= 100) {
+              setErrors(prev => {
+                const newTableErrors = {...prev.table};
+                delete newTableErrors[`commissionpercent_${index}`];
+                return {...prev, table: newTableErrors};
+              });
+            }
+          }}
         />
-      ),
-    },
+        {error && (
+          <div style={{ 
+            color: '#ff4d4f', 
+            fontSize: 12, 
+            marginTop: 4,
+            whiteSpace: 'nowrap'
+          }}>
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  },
+},
+
+
     {
       title: "Commission Amount",
       width: 150,
@@ -756,31 +1085,99 @@ function PMediaROMaster() {
         <Input value={record.totalcharges} readOnly placeholder="Total Charges" />
       ),
     },
-    {
-      title: "Cheque No",
-      width: 150,
-      dataIndex: "chequeno",
-      render: (_, record, index) => (
+   {
+  title: "Cheque No",
+  width: 150,
+  dataIndex: "chequeno",
+  render: (_, record, index) => {
+    const error = errors.table[`chequeno_${index}`];
+    return (
+      <div>
         <Input
           value={record.chequeno}
-          placeholder="cheque no"
-          style={{ backgroundColor: '#f8d7da' }}
-          onChange={e => handleInputChange(index, 'chequeno', e.target.value)}
+          placeholder="Cheque no"
+          disabled={record.paidBonus !== 'paid'}
+          style={{ 
+            backgroundColor: record.paidBonus === 'paid' ? '#f8d7da' : '#f5f5f5',
+            borderColor: error ? '#ff4d4f' : undefined 
+          }}
+          onChange={(e) => {
+            const value = e.target.value;
+            handleInputChange(index, 'chequeno', value);
+            // Clear error when valid
+            if (value && /^[0-9]+$/.test(value)) {
+              setErrors(prev => {
+                const newTableErrors = {...prev.table};
+                delete newTableErrors[`chequeno_${index}`];
+                return {...prev, table: newTableErrors};
+              });
+            }
+          }}
         />
-      ),
-    },
+        {error && (
+          <div style={{ 
+            color: '#ff4d4f', 
+            fontSize: 12, 
+            marginTop: 4,
+            whiteSpace: 'nowrap'
+          }}>
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  },
+},
+
+
+    // Cheque Date Column
     {
-      title: "Cheque Date",
-      width: 150,
-      dataIndex: "chequedate",
-      render: (_, record, index) => (
+  title: "Cheque Date",
+  width: 150,
+  dataIndex: "chequedate",
+  render: (_, record, index) => {
+    const error = errors.table[`chequedate_${index}`];
+    return (
+      <div>
         <DatePicker
           format="DD/MM/YYYY"
+          disabled={record.paidBonus !== 'paid'}
+          style={{ 
+            width: '100%', 
+            backgroundColor: record.paidBonus === 'paid' ? '#f8d7da' : '#f5f5f5',
+            borderColor: error ? '#ff4d4f' : undefined 
+          }}
           value={record.chequedate ? dayjs(record.chequedate) : null}
-          onChange={(date, dateString) => handleInputChange(index, 'chequedate', dateString)}
+          onChange={(date) => {
+            handleInputChange(index, 'chequedate', date);
+            // Clear error when valid
+            if (date && !date.isBefore(dayjs(), 'day')) {
+              setErrors(prev => {
+                const newTableErrors = {...prev.table};
+                delete newTableErrors[`chequedate_${index}`];
+                return {...prev, table: newTableErrors};
+              });
+            }
+          }}
+          disabledDate={(current) => current && current < dayjs().startOf('day')}
         />
-      ),
-    },
+        {error && (
+          <div style={{ 
+            color: '#ff4d4f', 
+            fontSize: 12, 
+            marginTop: 4,
+            whiteSpace: 'nowrap'
+          }}>
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  },
+},
+
+
+
     {
       title: "Action",
       width: 100,
@@ -796,7 +1193,7 @@ function PMediaROMaster() {
   ];
 
   return (
-    <main id="main" className="main">
+    <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
       <div className="pagetitle">
         <h1>P-Media RO Master</h1>
         <nav>
@@ -809,7 +1206,7 @@ function PMediaROMaster() {
         </nav>
       </div>
 
-      <Card title="" style={{ maxWidth: 1200, margin: "0 auto", backgroundColor: "#f5f5f5" }}>
+      <Card title="" >
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Row gutter={[8, 4]}>
             <Col span={6}>
@@ -822,8 +1219,11 @@ function PMediaROMaster() {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item label="RO Date" name="rodate" dataIndex="rodate" style={{ marginBottom: '8px' }}>
-                <DatePicker style={{ width: "50%" }} format="DD/MM/YYYY" />
+              <Form.Item label="RO Date" name="rodate" dataIndex="rodate" style={{ marginBottom: '8px' }}
+                validateStatus={errors.rodate ? 'error' : ''}
+                help={errors.rodate}>
+                <DatePicker style={{ width: "50%" }} format="DD/MM/YYYY"
+                  disabledDate={(current) => current && current < dayjs().startOf('day')} />
               </Form.Item>
             </Col>
             <Col span={6}>
@@ -838,7 +1238,9 @@ function PMediaROMaster() {
             </Col>
 
             <Col span={6}>
-              <Form.Item label="Client" name="clientid" style={{ marginBottom: '8px' }}>
+              <Form.Item label="Client" name="clientid" style={{ marginBottom: '8px' }}
+                validateStatus={errors.clientid ? 'error' : ''}
+                help={errors.clientid}>
                 <Select
                   showSearch
                   allowClear
@@ -855,7 +1257,9 @@ function PMediaROMaster() {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item label="Newspaper" name="pmediaid" style={{ marginBottom: '8px' }}>
+              <Form.Item label="Newspaper" name="pmediaid" style={{ marginBottom: '8px' }}
+                validateStatus={errors.pmediaid ? 'error' : ''}
+                help={errors.pmediaid}>
                 <Select
                   showSearch
                   allowClear
@@ -872,12 +1276,16 @@ function PMediaROMaster() {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item label="Editions" name="editions" style={{ marginBottom: '8px' }}>
+              <Form.Item label="Editions" name="editions" style={{ marginBottom: '8px' }}
+                validateStatus={errors.editions ? 'error' : ''}
+                help={errors.editions}>
                 <Input style={{ width: '200px' }} />
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item label="GST Type" name="gstid" style={{ backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}>
+              <Form.Item label="GST Type" name="gstid" style={{ backgroundColor: '#f48fb1', borderColor: '#9b59b6' }}
+                validateStatus={errors.gstid ? 'error' : ''}
+                help={errors.gstid}>
                 <Select
                   placeholder="Select GST Type"
                   onChange={handleGstTypeChange}
@@ -952,7 +1360,6 @@ function PMediaROMaster() {
             Add Item
           </Button>
 
-
           <Row gutter={[8, 4]}>
             <Col span={4}>
               <Form.Item label="RO Total" style={{ marginBottom: '8px' }}>
@@ -973,23 +1380,23 @@ function PMediaROMaster() {
 
             <Col span={4}>
               <Form.Item label={`CGST Total`} style={{ marginBottom: '8px' }}>
-                <Input value={cgstTotal} style={{ width: '100px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} />
+                <Input value={cgstTotal} style={{ width: '100px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} readOnly />
               </Form.Item>
             </Col>
 
             <Col span={4}>
               <Form.Item label={`SGST Total`} style={{ marginBottom: '8px' }}>
-                <Input value={sgstTotal} style={{ width: '100px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} />
+                <Input value={sgstTotal} style={{ width: '100px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} readOnly />
               </Form.Item>
             </Col>
 
             <Col span={4}>
-              <Form.Item label={`IGST Total`}  style={{ marginBottom: '8px' }}>
-                <Input value={igstTotal} style={{ width: '100px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} />
+              <Form.Item label={`IGST Total`} style={{ marginBottom: '8px' }}>
+                <Input value={igstTotal} style={{ width: '100px', backgroundColor: '#f48fb1', borderColor: '#9b59b6' }} readOnly />
               </Form.Item>
             </Col>
             <Col span={4}>
-              <Form.Item label="GST Total"  style={{ marginBottom: '8px' }}>
+              <Form.Item label="GST Total" style={{ marginBottom: '8px' }}>
                 <Input value={gstTotal} style={{ width: '100px' }} readOnly />
               </Form.Item>
             </Col>
@@ -1043,4 +1450,4 @@ function PMediaROMaster() {
   );
 }
 
-export default PMediaROMaster
+export default PMediaROMaster;

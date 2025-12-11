@@ -32,6 +32,7 @@ app.use("/menus",require("./routes/menusRoute"));
 app.use("/modulemenus",require("./routes/moduleMenusRoute"));
 app.use("/pmedia",require("./routes/pmediaRoute"));
 app.use("/pmediaros",require("./routes/pmediarosRoute"));
+app.use("/pmediaroinvoices", require("./routes/pmediaroinvoicesRoute"));
 app.use("/roles",require("./routes/rolesRoute"));
 app.use("/rolemodules",require("./routes/roleModulesRoute"));
 app.use("/states",require("./routes/statesRoute"));

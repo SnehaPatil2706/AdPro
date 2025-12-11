@@ -23,14 +23,14 @@ function Sidebar() {
         </li>
 
 
-        <li class="nav-item">
+        <li class="nav-item" style={{backgroundColor:"#f9e0f8"}}>
           <a
             class="nav-link collapsed"
             data-bs-target="#mastres-nav"
             data-bs-toggle="collapse"
             href="#"
           >
-            <i class="bi bi-menu-button-wide"></i>
+            <i class="bi bi-menu-button-wide" ></i>
             <span>Masters</span>
             <i class="bi bi-chevron-down ms-auto"></i>
           </a>
@@ -87,7 +87,7 @@ function Sidebar() {
         </li>
 
         <li class="nav-item">
-          <Link class="nav-link " to={"/pmedia/pmediaROList"}>
+          <Link class="nav-link " to={"/p-media/pMediaROList"}>
             <i class="bi bi-grid"></i>
             <span>P-Media RO</span>
           </Link>
@@ -114,7 +114,7 @@ function Sidebar() {
           </Link>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item" style={{backgroundColor:"#f9e0f8"}}>
           <a
             class="nav-link collapsed"
             data-bs-target="#financial-nav"
@@ -138,6 +138,13 @@ function Sidebar() {
             </li>
 
             <li>
+              <Link to={"/reports/rptPMediaROList"}>
+                <i class="bi bi-circle"></i>
+                <span>P-Media RO List</span>
+              </Link>
+            </li>
+
+            <li>
               <Link to={"/reports/rptInvoiceList"}>
                 <i class="bi bi-circle"></i>
                 <span>Design & Printing Invoice</span>
@@ -146,7 +153,7 @@ function Sidebar() {
           </ul>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item" style={{backgroundColor:"#f9e0f8"}}>
           <a
             class="nav-link collapsed"
             data-bs-target="#general-nav"
@@ -187,6 +194,13 @@ function Sidebar() {
               </Link>
             </li>
           </ul>
+        </li>
+
+        <li class="nav-item">
+          <Link class="nav-link " to={"/aboutIGap"}>
+            <i class="bi bi-grid"></i>
+            <span>About iGap Technologies</span>
+          </Link>
         </li>
 
         <li class="nav-item">

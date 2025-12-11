@@ -14,6 +14,25 @@ router.get("/", async (req, res) => {
     }
 });
 
+// In your backend routes
+router.get('/last-invoice', async (req, res) => {
+  try {
+    const lastInvoice = await EMediaROInvoice.findOne()
+      .sort({ invoiceno: -1 }) // Sort by invoice number descending
+      .select('invoiceno');
+      
+    res.json({
+      status: 'success',
+      data: lastInvoice || { invoiceno: 0 }
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: err.message
+    });
+  }
+});
+
 // Get records by agency ID
 router.get("/:id", async (req, res) => {
     try {

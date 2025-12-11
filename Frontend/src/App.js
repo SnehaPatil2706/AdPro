@@ -30,6 +30,15 @@ import EMediaROPrint from './components/user/e-media/EMediaROPrint';
 import EMediaInvoicePayment from './components/user/e-media/EMediaInvoicePayment';
 import EMediaROReport from './components/user/reports/EMediaROReport';
 import InvoicePayment from './components/user/invoice/InvoicePayment';
+import PMediaROBilling from './components/user/p-media/PMediaROBilling';
+import PMediaROPrint from './components/user/p-media/PMediaROPrint';
+import PMediaInvoicePayment from './components/user/p-media/PMediaInvoicePayment';
+import AboutIGap from './components/user/AboutIGap';
+import PmediaROReport from './components/user/reports/PMediaROReport';
+import PMediaROReport from './components/user/reports/PMediaROReport';
+import AdminProfile from './components/user/dashboard/AdminProfile';
+import Settings from './components/user/dashboard/Settings';
+import Help from './components/user/dashboard/Help'
 
 function App() {
   return (
@@ -41,6 +50,9 @@ function App() {
           <Route path="/forgot-password" element={<Forgotpassword />} />
           <Route path="dashboard" element={<Landing />}>
             <Route path="" element={<Dashboard />} />
+            <Route path="adminprofile" element={<AdminProfile/>} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="help" element={<Help/>} />
           </Route>
           <Route path="master" element={<Landing />}>
             <Route path="clients" element={<Clients />} />
@@ -61,26 +73,27 @@ function App() {
             <Route path="invoiceMaster" element={<InvoiceMaster />} />
             <Route path="invoiceMaster/:id" element={<InvoiceMaster />} />
             <Route path="invoicePrint/:agencyid/:invoiceid" element={<InvoicePrint />} />
-            <Route path="invoicePayment/:id" element={<InvoicePayment/>}/>
-            <Route path='invoicePayment' element={<InvoicePayment/>}/>
+            <Route path="invoicePayment/:id" element={<InvoicePayment />} />
+            <Route path='invoicePayment' element={<InvoicePayment />} />
           </Route>
           <Route path="emedia" element={<Landing />}>
             <Route path="emediaROList" element={<EMediaROList />} />
             <Route path="emediaROMaster" element={<EMediaROMaster />} />
             <Route path="emediaROMaster/:id" element={<EMediaROMaster />} />
-            <Route path='emediaROBilling/:id' element={<EMediaROBilling/>}/>
-            <Route path='emediaROBilling' element={<EMediaROBilling/>}/>
+            <Route path='emediaROBilling/:id' element={<EMediaROBilling />} />
+            <Route path='emediaROBilling' element={<EMediaROBilling />} />
             <Route path="emediaROPrint/:agencyid/:id" element={<EMediaROPrint />} />
             <Route path="emediaROPrint/:id" element={<EMediaROPrint />} />
-            <Route path="emediaInvoicePayment" element={<EMediaInvoicePayment/>}/>
-            <Route path="emediaInvoicePayment/:id" element={<EMediaInvoicePayment/>}/>
+            <Route path="emediaInvoicePayment" element={<EMediaInvoicePayment />} />
+            <Route path="emediaInvoicePayment/:id" element={<EMediaInvoicePayment />} />
           </Route>
-          <Route path="pmedia" element={<Landing />}>
-            <Route path="pmediaROList" element={<PMediaROList />} />
-            <Route path="pmediaROMaster" element={<PMediaROMaster />} />
-            <Route path="pmediaROMaster/:id" element={<PMediaROMaster />} />
-            {/* <Route path="pMediaROBilling/:id" element={<PMediaROBilling />} />
-            <Route path="pMediaROPrint/:agencyid/:id" element={<PMediaROPrint />} /> */}
+          <Route path="p-media" element={<Landing />}>
+            <Route path="pMediaROList" element={<PMediaROList />} />
+            <Route path="pMediaROMaster" element={<PMediaROMaster />} />
+            <Route path="pMediaROMaster/:id" element={<PMediaROMaster />} />
+            <Route path="pMediaROBilling/:id" element={<PMediaROBilling />} />
+            <Route path="pMediaROPrint/:id" element={<PMediaROPrint />} />
+            <Route path="pMediaInvoicePayment/:id" element={<PMediaInvoicePayment />} />  {/* Updated route */}
           </Route>
           <Route path="reports" element={<Landing />} >
             <Route path="rptInvoiceList" element={<InvoiceReport />} />
@@ -88,8 +101,10 @@ function App() {
             <Route path="rptClientAdsList" element={<ClientAdsReport />} />
             <Route path="rptHolidayList" element={<HolidayListReport />} />
             <Route path="rptEmployeeWork" element={<EmployeeWorkReport />} />
-            <Route path="rptEMediaROList" element={<EMediaROReport/>}/>
+            <Route path="rptEMediaROList" element={<EMediaROReport />} />
+            <Route path="rptPMediaROList" element={<PMediaROReport/>}/>
           </Route>
+          <Route path="/aboutIGap" element={<AboutIGap />} />
         </Routes>
       </BrowserRouter>
     </>

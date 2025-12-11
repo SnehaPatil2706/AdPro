@@ -4,14 +4,14 @@ import { Button, Input, Select, Table, message } from "antd";
 import axios from "axios";
 // import { useNavigate } from "react-router-dom";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Space, Popconfirm} from "antd";
+import { Space, Popconfirm } from "antd";
 
 function Tax() {
   let agency = JSON.parse(localStorage.getItem("agency")) || null;
-
   // const navigate = useNavigate();
   const [result, setResult] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [data, setData] = useState({
     id: "",
@@ -29,18 +29,52 @@ function Tax() {
 
   function handleChange(e) {
     setData({ ...data, [e.target.id]: e.target.value });
-  }
+  };
+
+  function validateForm() {
+    const newErrors = {};
+
+    if (!data.title.trim()) {
+      newErrors.title = "title is required";
+    }
+
+    if (!data.cgstpercent.trim()) {
+      newErrors.cgstpercent = "cgst percent is required";
+    } else if (!/^\d+$/.test(data.cgstpercent.trim())) {
+      newErrors.cgstpercent = "cgst percent must be a number";
+    }
+
+    if (!data.sgstpercent.trim()) {
+      newErrors.sgstpercent = "sgst percent is required";
+    }else if (!/^\d+$/.test(data.sgstpercent.trim())) {
+      newErrors.sgstpercent = "sgst percent must be a number";
+    }
+
+    if (!data.igstpercent.trim()) {
+      newErrors.igstpercent = "igst percent is required";
+    }else if (!/^\d+$/.test(data.igstpercent.trim())) {
+      newErrors.igstpercent = "igst percent must be a number";
+    }
+
+    if (!data.gstcode.trim()) {
+      newErrors.gstcode = "gst code is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   function handleSave(e) {
     e.preventDefault();
-  
+    if (!validateForm()) return;
+
     const payload = {
       ...data,
       cgstpercent: parseFloat(data.cgstpercent || 0).toFixed(2),
       sgstpercent: parseFloat(data.sgstpercent || 0).toFixed(2),
       igstpercent: parseFloat(data.igstpercent || 0).toFixed(2),
     };
-  
+
     if (isEditMode) {
       axios
         .put(`http://localhost:8081/gsts/${data.id}`, payload)
@@ -59,7 +93,7 @@ function Tax() {
         })
         .catch(() => message.error("Save failed"));
     }
-  };  
+  };
 
   function handleCancel() {
     setData({
@@ -72,7 +106,8 @@ function Tax() {
       gstcode: ''
     });
     setIsEditMode(false);
-  }
+    setErrors({});
+  };
 
   function handleEdit(record) {
     setData({
@@ -85,7 +120,8 @@ function Tax() {
       gstcode: record.gstcode,
     });
     setIsEditMode(true);
-  }
+    setErrors({});
+  };
 
   function handleDelete(id) {
     axios
@@ -95,7 +131,7 @@ function Tax() {
         loadData();
       })
       .catch(() => message.error("Delete failed"));
-  }
+  };
 
   function loadData() {
     setData({
@@ -108,11 +144,12 @@ function Tax() {
       gstcode: ''
     });
     setIsEditMode(false);
+    setErrors({});
 
     axios.get("http://localhost:8081/gsts/").then((res) => {
       setResult(res.data.data);
     });
-  }
+  };
 
   const columns = [
     {
@@ -169,6 +206,7 @@ function Tax() {
       ),
     },
   ];
+
   return (
     <main id="main" className="main">
       <div className="pagetitle">
@@ -195,7 +233,9 @@ function Tax() {
                     onChange={handleChange}
                     value={data.title}
                     placeholder="Title"
+                    status={errors.title ? "error" : ""}
                   />
+                  {errors.title && <div style={{ color: "red" }}>{errors.title}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   GST PLAN CODE*
@@ -204,7 +244,9 @@ function Tax() {
                     onChange={handleChange}
                     value={data.gstcode}
                     placeholder="GST Code"
+                    status={errors.gstcode ? "error" : ""}
                   />
+                  {errors.gstcode && <div style={{ color: "red" }}>{errors.gstcode}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   CGST %*
@@ -213,7 +255,9 @@ function Tax() {
                     onChange={handleChange}
                     value={data.cgstpercent}
                     placeholder="CGST"
+                    status={errors.cgstpercent ? "error" : ""}
                   />
+                  {errors.cgstpercent && <div style={{ color: "red" }}>{errors.cgstpercent}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   SGST %*
@@ -222,7 +266,9 @@ function Tax() {
                     onChange={handleChange}
                     value={data.sgstpercent}
                     placeholder="SGST"
+                    status={errors.sgstpercent ? "error" : ""}
                   />
+                  {errors.sgstpercent && <div style={{ color: "red" }}>{errors.sgstpercent}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   IGST %*
@@ -231,7 +277,9 @@ function Tax() {
                     onChange={handleChange}
                     value={data.igstpercent}
                     placeholder="IGST"
+                    status={errors.igstpercent ? "error" : ""}
                   />
+                  {errors.igstpercent && <div style={{ color: "red" }}>{errors.igstpercent}</div>}
                 </div>
                 <div className="col-lg-12 p-1">
                   <Button onClick={handleSave} type="primary">

@@ -14,6 +14,19 @@ router.get("/", async (req, res) => {
     }
 });
 
+// In your backend route file
+router.get('/lastrono', async (req, res) => {
+  try {
+    const lastRO = await EMediaRO.findOne().sort({ rono: -1 }).limit(1);
+    res.json({ 
+      lastRONumber: lastRO ? lastRO.rono : 0 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get records by agency ID
 router.get("/agency/:agencyid", async (req, res) => {
     try {

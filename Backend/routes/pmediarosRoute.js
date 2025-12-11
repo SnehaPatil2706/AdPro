@@ -1,9 +1,47 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const PMediaRO = require('../models/PMediaROSchema');
+const PMedia = require('../models/PMediaSchema'); 
 const router = express.Router();
 
-router.get("/:agencyid", async (req, res) => {
+
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({ status: "error", message: "Invalid ID" });
+        }
+        const object = await PMediaRO.findById(id)
+            .populate("clientid")
+            .populate("pmediaid");
+
+        if (!object) {
+            return res.status(404).json({ status: "error", message: "Record not found" });
+        }
+        res.json({ status: "success", data: object });
+    } catch (err) {
+        console.error("Error fetching by ID:", err);
+        res.status(500).json({ status: "error", message: err.message });
+    }
+});
+
+// In your backend route file
+router.get('/lastrono', async (req, res) => {
+  console.log('Received request for lastrono'); // Add this
+  try {
+    const lastRO = await PMediaRO.findOne().sort({ rono: -1 }).limit(1);
+    console.log('Found last RO:', lastRO); // Add this
+    res.json({ 
+      lastRONumber: lastRO ? lastRO.rono : 0 
+    });
+  } catch (err) {
+    console.error('Error in /lastrono:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+router.get("/agency/:agencyid", async (req, res) => {
     try {
         const { agencyid } = req.params;
 
@@ -26,6 +64,21 @@ router.get("/:agencyid", async (req, res) => {
     }
 });
 
+router.get('/pmediaroid/pmediaid/:id', async (req, res) => {
+  try {
+    const ro = await PMediaRO.findById(req.params.id);
+    if (!ro) return res.status(404).json({ message: 'RO not found' });
+
+    const pmedia = await PMedia.findById(ro.pmediaid);
+    if (!pmedia) return res.status(404).json({ message: 'Print Media not found' });
+
+    res.json({ data: pmedia });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get("/", async (req, res) => {
     try {
         let result = await PMediaRO.find({});
@@ -40,7 +93,8 @@ router.get("/:agencyid/:id", async (req, res) => {
         const id = req.params.id;
         let object = await PMediaRO.findById(id)
             .populate('clientid')
-            .populate('agencyid');
+            .populate('agencyid')
+            .populate('pmediaid');
         res.json({ status: "success", data: object });
     } catch (err) {
         res.json({ status: "error", data: err });
@@ -59,7 +113,7 @@ router.post("/", async (req, res) => {
     }
 });
 
-router.put('/:agencyid/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {

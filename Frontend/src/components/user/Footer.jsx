@@ -7,7 +7,7 @@ function Footer() {
         <div className="copyright">
           &copy; Copyright{" "}
           <strong>
-            <span>NiceAdmin</span>
+            <span>iGAP Technologies</span>
           </strong>
           . All Rights Reserved
         </div>

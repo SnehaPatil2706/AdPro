@@ -1,26 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Button, Col, Row, Dropdown, Menu, message, Spin, Card } from "antd";
+import { Button, Col, Row, Dropdown, Menu, message, Spin, Card, Typography, Divider, Table, List } from "antd";
 import { DownOutlined, PrinterOutlined, CalendarOutlined } from "@ant-design/icons";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 
 const InvoicePrint = () => {
   const { agencyid, invoiceid } = useParams();
-
+  const { Title, Paragraph, Text } = Typography;
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDate, setShowDate] = useState(true);
+  const [dataSource, setDataSource] = useState([]);
+
+  const columns = [
+    { title: ' No', dataIndex: 'no', key: 'no', width: 80, render: (text, record, index) => index + 1 },
+    { title: 'Particular', dataIndex: 'particular', key: 'particular', width: 120 },
+    { title: 'Quantity', dataIndex: 'quantity', key: 'quantity', width: 120 },
+    { title: 'Rate', dataIndex: 'rate', key: 'rate', width: 120 },
+    { title: 'Amount', dataIndex: 'amount', key: 'amount', width: 120 },
+  ];
 
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
         setLoading(true);
         console.log(`Fetching invoice ${invoiceid} for agency ${agencyid}`);
-        
+
         const res = await axios.get(`http://localhost:8081/invoices/${agencyid}/${invoiceid}`);
         console.log("API Response:", res.data);
 
@@ -54,7 +63,7 @@ const InvoicePrint = () => {
     if (format === "pdf") {
       const doc = new jsPDF();
       doc.html(content, {
-        callback: function(doc) {
+        callback: function (doc) {
           doc.save(`${fileName}.pdf`);
         },
         margin: [10, 10, 10, 10],
@@ -107,8 +116,8 @@ const InvoicePrint = () => {
         <div style={{ textAlign: 'center', padding: 20 }}>
           <h2>Error Loading Invoice</h2>
           <p>{error}</p>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             onClick={() => navigate(`/invoice/invoiceList`)}
             style={{ marginTop: 20 }}
           >
@@ -125,8 +134,8 @@ const InvoicePrint = () => {
         <div style={{ textAlign: 'center', padding: 20 }}>
           <h2>Invoice Not Found</h2>
           <p>The requested invoice could not be loaded.</p>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             onClick={() => navigate(`/invoice/invoiceList`)}
             style={{ marginTop: 20 }}
           >
@@ -142,128 +151,102 @@ const InvoicePrint = () => {
   const balanceDue = invoice.billAmount - totalPaid;
 
   return (
-    <main id="main" className="main">
+    <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
       <div className="pagetitle">
-        <Row gutter={16}>
-          <Col span={12}>
-            <h1>Invoice #{invoice.invoiceNo}</h1>
-            <nav>
-              <ol className="breadcrumb">
-                <li className="breadcrumb-item">
-                  <Link to="/">Home</Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <Link to="/invoice/invoiceList">Invoices</Link>
-                </li>
-                <li className="breadcrumb-item active">Invoice Print</li>
-              </ol>
-            </nav>
-          </Col>
-          <Col span={12} style={{ textAlign: 'right' }}>
-            <Dropdown overlay={menu} placement="bottomRight">
-              <Button style={{ marginRight: 8 }}>
-                Download <DownOutlined />
-              </Button>
-            </Dropdown>
-            <Button 
-              type="primary" 
-              icon={<PrinterOutlined />} 
-              onClick={handlePrint}
-              style={{ marginRight: 8 }}
-            >
-              Print
-            </Button>
-            <Button 
-              icon={<CalendarOutlined />} 
-              onClick={() => setShowDate(!showDate)}
-            >
-              {showDate ? 'Hide Date' : 'Show Date'}
-            </Button>
-          </Col>
-        </Row>
+        <h1>Invoice #{invoice.invoiceNo}</h1>
+        <nav>
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item">
+              <Link to="/">Home</Link>
+            </li>
+            <li className="breadcrumb-item">
+              <Link to="/invoice/invoiceList">Invoices</Link>
+            </li>
+            <li className="breadcrumb-item active">Invoice Print</li>
+          </ol>
+        </nav>
       </div>
 
-      <div id="invoice-content" style={{ 
-        padding: 30, 
-        fontFamily: "Arial", 
-        maxWidth: "800px",
-        margin: "0 auto",
-        backgroundColor: "white",
-        boxShadow: "0 0 10px rgba(0,0,0,0.1)"
-      }}>
+      <Card
+        id="invoice-content"
+        style={{
+          padding: 30,
+          fontFamily: "Arial",
+          maxWidth: 800,
+          margin: "0 auto",
+          backgroundColor: "white",
+          boxShadow: "0 0 10px rgba(0,0,0,0.1)"
+        }}
+        bordered={false}
+      >
+
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <h2 style={{ margin: 0 }}>INVOICE</h2>
-          <h4>DESIGN-PRODUCTION & DIGITAL MARKETING</h4>
-          <p>
-            <strong>Office:</strong> Tulip Classic, Office No. 202, 12th Lane, Rajarampuri, Kolhapur. Pin 416 008. <br />
-            <strong>Tel:</strong> 0231-2529585 | <strong>Mob:</strong> 8698711555 | <strong>Email:</strong> brandcf@gmail.com
-          </p>
+          <Title level={2} style={{ margin: 0 }}>INVOICE</Title>
+          <Title level={5} style={{ fontWeight: 'bold' }}>DESIGN-PRODUCTION & DIGITAL MARKETING</Title>
+          <Paragraph style={{ fontSize: '12px', marginBottom: 0 }}>
+            <Text strong>Office:</Text> Tulip Classic, Office No. 202, 12th Lane, Rajarampuri, Kolhapur. Pin 416 008. <br />
+            <Text strong>Tel:</Text> 0231-2529585 | <Text strong>Mob:</Text> 8698711555 | <Text strong>Email:</Text> brandcf@gmail.com
+          </Paragraph>
         </div>
-        <hr style={{ borderTop: "1px solid #ddd" }} />
+
+        <Divider style={{ borderColor: '#000', borderWidth: 2 }} />
 
         {/* Invoice & Client Details */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-          <div>
-            <p><strong>Invoice No:</strong> {invoice.invoiceNo}</p>
-            <p><strong>Client Name:</strong> {invoice.clientid?.name || "N/A"}</p>
-            <p><strong>Client Address:</strong> {invoice.clientid?.address || "N/A"}</p>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <p>
-              <strong>Date:</strong> {showDate ? dayjs(invoice.invoiceDate).format("DD/MM/YYYY") : ""}
-            </p>
-            <p>
-              <strong>Client GST No:</strong> {invoice.clientid?.gstno || "N/A"}
-            </p>
-            <p>
-              <strong>Due Date:</strong> {dayjs(invoice.invoiceDate).add(30, 'day').format("DD/MM/YYYY")}
-            </p>
-          </div>
-        </div>
+        <Row gutter={16} style={{ marginBottom: 20 }}>
+          <Col span={12}>
+            <Paragraph style={{ fontSize: '14px' }}><Text strong>Invoice No :-</Text>
+              <span style={{ marginLeft: 8 }}>{invoice?.invoiceNo || ""}</span></Paragraph>
+            <Paragraph style={{ fontSize: '14px' }}><Text strong>Client Name :-</Text>
+              <span style={{ marginLeft: 8 }}>{invoice?.clientid?.name || ""}</span></Paragraph>
+            <Paragraph style={{ fontSize: '14px' }}><Text strong>Client Address :-</Text>
+              <span style={{ marginLeft: 8 }}>{invoice?.clientid?.address || ""}</span></Paragraph>
+          </Col>
+          <Col span={12} style={{ paddingLeft: '80px', textAlign: 'left' }}>
+            <Paragraph style={{ fontSize: '14px' }}><Text strong>Date :-</Text>
+              <span style={{ marginLeft: 8 }}>{invoice?.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB') : ""}</span></Paragraph>
+            <Paragraph style={{ fontSize: '14px' }}><Text strong>Client GST No :-</Text>
+              <span style={{ marginLeft: 8 }}>{invoice?.clientid?.gstno || ""}</span></Paragraph>
+            <Paragraph style={{ fontSize: '14px' }}><Text strong>Due Date :-</Text>
+              <span style={{ marginLeft: 8 }}>{invoice?.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB') : ""}</span></Paragraph>
+          </Col>
+        </Row>
 
         {/* Items Table */}
-        <table border="1" style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
-          <thead>
-            <tr style={{ backgroundColor: "#f0f0f0" }}>
-              <th style={{ padding: 8 }}>No</th>
-              <th style={{ padding: 8 }}>Particular</th>
-              <th style={{ padding: 8 }}>Quantity</th>
-              <th style={{ padding: 8 }}>Rate</th>
-              <th style={{ padding: 8 }}>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.details?.map((item, index) => (
-              <tr key={index}>
-                <td style={{ padding: 8, textAlign: "center" }}>{index + 1}</td>
-                <td style={{ padding: 8 }}>{item.particular}</td>
-                <td style={{ padding: 8, textAlign: "center" }}>{item.quantity}</td>
-                <td style={{ padding: 8, textAlign: "right" }}>{item.rate?.toFixed(2)}</td>
-                <td style={{ padding: 8, textAlign: "right" }}>{item.amount?.toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ marginTop: 12 }}>
+          {dataSource.length > 0 ? (
+            <Table
+              className="striped-table"
+              columns={columns}
+              dataSource={dataSource}
+              pagination={false}
+              bordered
+              size="middle"
+            />
+          ) : (
+            <Paragraph type="secondary" style={{ fontStyle: 'italic', margin: 0 }}>
+              No schedule records available.
+            </Paragraph>
+          )}
+        </div>
 
         {/* Totals and Payment Info */}
         <Row gutter={16}>
           <Col span={12}>
-            <div style={{ marginTop: 10 }}>
-              <h4>Payment Information:</h4>
-              <p><strong>Bank Name:</strong> Example Bank</p>
-              <p><strong>Account Number:</strong> 1234567890</p>
-              <p><strong>IFSC Code:</strong> EXMP0123456</p>
-              <p><strong>UPI ID:</strong> brandcf@examplebank</p>
-              
-              <div style={{ textAlign: "center", marginTop: 20 }}>
-                <img 
-                  src={invoice.qrCode || "/default-qr.png"} 
-                  alt="QR Code" 
-                  style={{ width: 120, height: 120, border: "1px solid #ddd" }} 
-                />
-                <p><strong>SCAN TO PAY</strong></p>
-              </div>
+            {/* Terms and Conditions */}
+            <div style={{ marginTop: 30 }}>
+              <Title level={4}>Terms & Conditions:</Title>
+              <List
+                size="small"
+                dataSource={[
+                  "Subject to Kolhapur Jurisdiction",
+                  "Terms as per PO / MOU",
+                  "Interest @ 3% per month after due date",
+                  "Errors to be reported within 3 days",
+                  "Cheques to be drawn in favour of BRANDCHEF ADVERTISING, Kolhapur"
+                ]}
+                renderItem={(item) => <List.Item style={{ paddingLeft: 0 }}>{item}</List.Item>}
+              /><br />
             </div>
           </Col>
           <Col span={12}>
@@ -314,18 +297,6 @@ const InvoicePrint = () => {
           </Col>
         </Row>
 
-        {/* Terms and Conditions */}
-        <div style={{ marginTop: 30 }}>
-          <h4>Terms & Conditions:</h4>
-          <ul style={{ paddingLeft: 20 }}>
-            <li>Subject to Kolhapur Jurisdiction</li>
-            <li>Terms as per PO / MOU</li>
-            <li>Interest @ 3% per month after due date</li>
-            <li>Errors to be reported within 3 days</li>
-            <li>Cheques to be drawn in favour of BRANDCHEF ADVERTISING, Kolhapur</li>
-          </ul>
-        </div>
-
         {/* Footer */}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40 }}>
           <div style={{ width: "50%" }}>
@@ -333,15 +304,27 @@ const InvoicePrint = () => {
             <p>_________________________</p>
           </div>
           <div style={{ textAlign: "center" }}>
-            <img 
-              src="/stamp.png" 
-              alt="Company Seal" 
-              style={{ width: 100, height: 100, opacity: 0.8 }} 
+            <img
+              src="/stamp.png"
+              alt="Company Seal"
+              style={{ width: 100, height: 100, opacity: 0.8 }}
             />
             <p><strong>Authorized Signatory</strong></p>
           </div>
         </div>
-      </div>
+      </Card>
+
+      {/* download + print controls */}
+      <Row justify="end" style={{ marginTop: 16 }}>
+        <Dropdown overlay={menu} placement="bottomRight">
+          <Button icon={<DownOutlined />} style={{ marginRight: 8, backgroundColor: '#7fdbff', color: '#000' }}>
+            Download
+          </Button>
+        </Dropdown>
+        <Button icon={<PrinterOutlined />} type="primary" onClick={handlePrint}>
+          Print
+        </Button>
+      </Row>
     </main>
   );
 };

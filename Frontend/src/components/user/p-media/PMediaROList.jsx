@@ -9,7 +9,7 @@ const { Text } = Typography;
 const { Option } = Select;
 
 function PMediaROList() {
- const agency = JSON.parse(localStorage.getItem('agency'));
+    const agency = JSON.parse(localStorage.getItem('agency'));
     const navigate = useNavigate();
     const [searchForm] = Form.useForm();
     const [loading, setLoading] = useState(true);
@@ -22,8 +22,61 @@ function PMediaROList() {
 
     const onSearch = (values) => {
         let filtered = [...originalData];
+
+        if (values.status && values.status !== "All") {
+            filtered = filtered.filter(row => {
+                const paid = parseFloat(row.paid) || 0;
+                const remaining = parseFloat(row.remaining) || 0;
+
+                if (values.status === "Not Billed") return paid === 0;
+                if (values.status === "Partially Billed") return paid > 0 && remaining > 0;
+                if (values.status === "Billed") return remaining === 0 && paid > 0;
+                return true;
+            });
+        }
+
+        if (values.paper) {
+            const selectedPaperName = pmedias.find(p => p.value === values.paper)?.label;
+            filtered = filtered.filter(row => row.pmediaid === selectedPaperName);
+        }
+
+        if (values.client) {
+            const selectedClientName = clients.find(c => c.value === values.client)?.label;
+            filtered = filtered.filter(row => row.clientid === selectedClientName);
+        }
+
+        if (values.searchText) {
+            const search = values.searchText.toString().toLowerCase();
+            filtered = filtered.filter(row =>
+                (row.invoiceno || '').toString().toLowerCase() === search ||
+                (row.rono || '').toString().toLowerCase() === search
+            );
+        }
+
+        // Fixed date filtering logic
+        if (values.fromDate || values.toDate) {
+            const fromDate = values.fromDate ? dayjs(values.fromDate).startOf('day') : null;
+            const toDate = values.toDate ? dayjs(values.toDate).endOf('day') : null;
+
+            filtered = filtered.filter(row => {
+                // Parse the rodate which is stored as "DD/MM/YYYY"
+                const roDate = dayjs(row.rodate, 'DD/MM/YYYY');
+
+                if (!roDate.isValid()) return false; // Skip invalid dates
+
+                // Check if date is after fromDate (if provided)
+                const afterFrom = fromDate ? roDate.isAfter(fromDate.subtract(1, 'day')) : true;
+
+                // Check if date is before toDate (if provided)
+                const beforeTo = toDate ? roDate.isBefore(toDate.add(1, 'day')) : true;
+
+                return afterFrom && beforeTo;
+            });
+        }
+
         setDataSource(filtered);
     };
+
 
     const onResetSearch = () => {
         searchForm.resetFields();
@@ -47,7 +100,7 @@ function PMediaROList() {
                                 size="small"
                                 icon={<EditOutlined />}
                                 style={{ background: '#3b82f6', color: '#fff' }}
-                                onClick={() => navigate(`/pmedia/pmediaROMaster/${record.key}`)}
+                                onClick={() => navigate(`/p-media/pMediaROMaster/${record.key}`)}
                             />
                         </Tooltip>
                         <Tooltip title="Click to delete"
@@ -73,17 +126,16 @@ function PMediaROList() {
                             size="small"
                             icon={<PrinterOutlined />}
                             style={{ background: '#22c55e', color: '#fff' }}
-                           onClick={() => navigate(`/pmedia/pmediaROPrint/${record.key}`)}
+                            onClick={() => navigate(`/p-media/pMediaROPrint/${record.key}`)}
                         />
-                        {/* <Button
+                        <Button
                             size="small"
                             icon={<DollarOutlined />}
                             style={{ background: '#be185d', color: '#fff' }}
                             onClick={() => {
-                                setSelectedInvoice(record); // Set the selected invoice
-                                setIsPaymentModalVisible(true); // Open the modal
+                                navigate(`/p-media/pMediaInvoicePayment/${record.key}`);
                             }}
-                        /> */}
+                        />
                     </div>
                 </div >
             ),
@@ -158,15 +210,19 @@ function PMediaROList() {
         },
 
         { title: 'RO Date', dataIndex: 'rodate', key: 'rodate', width: 100 },
-        { title: 'Invoice No', dataIndex: 'invoiceNo', key: 'invoiceNo', width: 80 },
+        { title: 'Invoice No', dataIndex: 'invoiceno', key: 'invoiceno', width: 80 },
         { title: 'Client', dataIndex: 'clientid', key: 'clientid', width: 120 },
         { title: 'Paper', dataIndex: 'pmediaid', key: 'pmediaid', width: 120 },
         { title: 'Editions', dataIndex: 'editions', key: 'editions', width: 120 },
         { title: 'RO Amount', dataIndex: 'robillamount', key: 'robillamount', width: 80 },
         { title: 'Invoice Count', dataIndex: 'invoiceCount', key: 'invoiceCount', width: 120 },
-        { title: 'Discount', dataIndex: 'discount', key: 'discount', width: 80 },
-        { title: 'GST%', dataIndex: 'gstPercent', key: 'gstPercent', width: 80 },
-        { title: 'Invoice Amount', dataIndex: 'billAmount', key: 'billAmount', width: 100 },
+        { title: 'Discount', dataIndex: 'discountamount', key: 'discountamount', width: 80 },
+        {
+            title: 'GST Total',
+            dataIndex: 'gsttotal',
+            key: 'gsttotal',
+            width: 100,
+        }, { title: 'Invoice Amount', dataIndex: 'invoiceamount', key: 'invoiceamount', width: 100 },
         { title: 'Paid', dataIndex: 'paid', key: 'paid', width: 80 },
         { title: 'Remaining', dataIndex: 'remaining', key: 'remaining', width: 100 },
     ];
@@ -192,7 +248,7 @@ function PMediaROList() {
 
     function loadData() {
         return Promise.all([
-            axios.get("http://localhost:8081/pmedias"),
+            axios.get("http://localhost:8081/pmedia"),
             axios.get(`http://localhost:8081/clients/${agency._id}`)
         ]).then(([pmediasRes, clientsRes]) => {
             const pmediasList = (pmediasRes.data?.data || []).map(pmedia => ({
@@ -219,27 +275,80 @@ function PMediaROList() {
     function loadROData(pmediasList, clientsList) {
         setLoading(true);
         axios.get("http://localhost:8081/pmediaros")
-            .then((res) => {
-                console.log("Fetched RO Data:", res.data.data); // Log the fetched data
+            .then(async (res) => {
                 if (res.data && Array.isArray(res.data.data)) {
-                    const formattedData = res.data.data.map((ro) => {
-                        console.log("Processing RO:", ro); // Log each RO being processed
+                    const ros = res.data.data;
+                    const roIds = ros.map(ro => ro._id);
+
+                    // Fetch all invoices for these ROs
+                    const invoiceRes = await axios.post("http://localhost:8081/pmediaroinvoices/by-ro-ids", { roIds });
+                    const invoices = invoiceRes.data.data;
+                    // After fetching invoices
+                    console.log("Invoices:", invoices);
+
+
+
+                    // Group invoices by pmediaroid as string
+                    const invoiceMap = {};
+                    invoices.forEach(inv => {
+                        const key = typeof inv.pmediaroid === 'object' && inv.pmediaroid.$oid
+                            ? inv.pmediaroid.$oid
+                            : String(inv.pmediaroid);
+                        if (!invoiceMap[key]) invoiceMap[key] = [];
+                        invoiceMap[key].push(inv);
+                    });
+                    console.log("Invoice Map:", invoiceMap);
+
+                    // For each RO, pick the latest invoice (by invoicedate)
+                    const formattedData = ros.map((ro) => {
+                        const roId = typeof ro._id === 'object' && ro._id.$oid
+                            ? ro._id.$oid
+                            : String(ro._id);
+                        const invoiceArr = invoiceMap[roId] || [];
+                        const sortedInvoices = [...invoiceArr].sort((a, b) => {
+                            const dateA = a.invoicedate ? new Date(a.invoicedate) : 0;
+                            const dateB = b.invoicedate ? new Date(b.invoicedate) : 0;
+                            return dateB - dateA;
+                        });
+                        const latestInvoice = sortedInvoices[0] || {};
+                        const cgst = parseFloat(latestInvoice.icgstamount) || 0;
+                        const sgst = parseFloat(latestInvoice.isgstamount) || 0;
+                        const igst = parseFloat(latestInvoice.iigstamount) || 0;
+                        console.log('GST values:', cgst, sgst, igst, 'for invoice', latestInvoice);
+                        const gsttotal = (cgst + sgst + igst).toFixed(2);
+
+                        let paid = 0;
+                        let remaining = "";
+                        if (latestInvoice.payments && latestInvoice.payments.length > 0) {
+                            // Sum all payment amounts
+                            paid = latestInvoice.payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                            // Calculate remaining
+                            remaining = ((parseFloat(latestInvoice.invoiceamount) || 0) - paid).toFixed(2);
+                        } else {
+                            paid = 0;
+                            remaining = latestInvoice.invoiceamount || "";
+                        }
+                        console.log('Paid:', paid, 'Remaining:', remaining, 'for invoice', latestInvoice);
+
                         return {
-                            key: ro._id,
+                            key: roId,
                             rono: ro.rono,
                             rodate: ro.rodate ? dayjs(ro.rodate).format('DD/MM/YYYY') : null,
                             clientid: clientsList.find(c => c.value === ro.clientid)?.label || ro.clientid,
                             pmediaid: pmediasList.find(e => e.value === ro.pmediaid)?.label || ro.pmediaid,
-                            editions: ro.editions || "N/A", // Add editions field
-                            amount: ro.amount,
-                            discount: ro.discount,
-                            gstPercent: ro.gstPercent,
+                            editions: ro.editions || "N/A",
                             robillamount: ro.robillamount,
-                            paid: ro.paid,
-                            remaining: ro.remaining,
+                            invoiceno: latestInvoice.invoiceno || "",
+                            invoiceamount: latestInvoice.invoiceamount || "",
+                            discountamount: latestInvoice.discountamount ?? "",
+                            // gstid: latestInvoice.gstid || "",
+                            paid: paid.toFixed(2),
+                            remaining,
+                            invoiceCount: invoiceArr.length,
+                            gsttotal,
                         };
                     });
-                    console.log("Formatted Data:", formattedData); // Log the formatted data
+                    console.log("Formatted Data:", formattedData);
                     setDataSource(formattedData);
                     setOriginalData(formattedData);
                 } else {
@@ -259,13 +368,13 @@ function PMediaROList() {
 
     useEffect(() => {
         loadData().then(({ pmedias, clients }) => {
-            loadROData(pmedias, clients); // pass freshly loaded data
+            loadROData(pmedias, clients);
         });
     }, []);
 
 
     return (
-        <main id="main" className="main">
+        <main id="main" className="main" style={{ backgroundColor: "#f5f5f5", padding: 20 }}>
             <div className="pagetitle">
                 <h1>P-Media RO List</h1>
                 <nav>
@@ -280,7 +389,7 @@ function PMediaROList() {
 
             <Card
                 title="Search P-Medias"
-                style={{ maxWidth: 1200, margin: '0 auto', padding: '12px', backgroundColor: "#f5f5f5" }}
+                style={{ maxWidth: 1200, margin: '0 auto', padding: '12px' }}
                 bodyStyle={{ padding: '8px' }}
             >
                 <Form form={searchForm} layout="vertical" onFinish={onSearch}>
@@ -342,7 +451,7 @@ function PMediaROList() {
                             </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item label="SEARCH RO/INVOICE NO" name="searchText" style={{ marginBottom: '8px' }}>
+                            <Form.Item label="SEARCH RO/INVOICE NO" name="searchText" style={{ marginBottom: '8px' }} form={searchForm} onFinish={onSearch}>
                                 <Input.Search
                                     placeholder="Search..."
                                     disabled={loading}
@@ -366,17 +475,17 @@ function PMediaROList() {
                     </Row>
                     <Row justify="start" gutter={16}>
                         <Col>
-                            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+                            <Button type="primary" style={{ backgroundColor: '#7fdbff', color: '#000' }}  htmlType="submit" icon={<SearchOutlined />}>
                                 SHOW
                             </Button>
                         </Col>
                         <Col>
-                            <Button danger onClick={onResetSearch} icon={<RedoOutlined />}>
+                            <Button danger type="primary"  onClick={onResetSearch} icon={<RedoOutlined />}>
                                 RESET
                             </Button>
                         </Col>
                         <Col>
-                            <Button type="primary" onClick={() => navigate('/pmedia/pmediaROMaster')}>
+                            <Button type="primary" onClick={() => navigate('/p-media/pMediaROMaster')}>
                                 Add New RO
                             </Button>
                         </Col>
@@ -384,7 +493,7 @@ function PMediaROList() {
                 </Form>
             </Card>
 
-            <Card title="RO Records" style={{ maxWidth: 1200, margin: '24px auto', backgroundColor: "#f5f5f5" }}>
+            <Card title="RO Records" style={{ maxWidth: 1200, margin: '24px auto'}}>
                 <div style={{ padding: "16px 16px 0 16px" }}>
                     <Text type="danger" style={{ fontSize: 16 }}>
                         Total records: {dataSource.length}

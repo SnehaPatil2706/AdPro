@@ -6,14 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Space, Popconfirm } from "antd";
 
-
 function Clients() {
   let agency = JSON.parse(localStorage.getItem("agency")) || null;
-
   const [states, setStates] = useState([]);
   const navigate = useNavigate();
   const [result, setResult] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [data, setData] = useState({
     id: "",
@@ -33,8 +32,33 @@ function Clients() {
     setData({ ...data, [e.target.id]: e.target.value });
   };
 
+  function validateForm() {
+    const newErrors = {};
+
+    if (!data.name.trim()) {
+      newErrors.name = "name is required";
+    } else if (!/^[A-Za-z\s]+$/.test(data.name.trim())) {
+      newErrors.name = "name can only contain letters";
+    }
+
+    if (!data.contact.trim()) newErrors.contact = "contact is required";
+    else if (!/^\d{10}$/.test(data.contact.trim()))
+      newErrors.contact = "contact must be a 10-digit number";
+
+    if (!data.address.trim()) newErrors.address = "address is required";
+    if (!data.stateid) newErrors.stateid = "state is required";
+
+    if (!data.gstno.trim()) {
+      newErrors.gstno = "gst no. is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   function handleSave(e) {
     e.preventDefault();
+    if (!validateForm()) return;
 
     if (isEditMode) {
       axios
@@ -73,6 +97,7 @@ function Clients() {
       gstno: "",
     });
     setIsEditMode(false);
+    setErrors({});
   };
 
   function handleEdit(record) {
@@ -86,6 +111,7 @@ function Clients() {
       gstno: record.gstno,
     });
     setIsEditMode(true);
+    setErrors({});
   };
 
   function handleDelete(id) {
@@ -112,6 +138,7 @@ function Clients() {
       gstno: "",
     });
     setIsEditMode(false);
+    setErrors({});
 
     // Log the agency ID for debugging
     console.log("Agency ID being used for fetching clients:", agency._id);
@@ -140,7 +167,7 @@ function Clients() {
 
     // Fetch clients
     axios
-      .get(`http://localhost:8081/clients/`+ agency._id)
+      .get(`http://localhost:8081/clients/` + agency._id)
       .then((res) => {
         console.log("Clients API Response:", res.data.data); // Debugging
         if (res.data && Array.isArray(res.data.data)) {
@@ -235,7 +262,9 @@ function Clients() {
                     onChange={handleChange}
                     value={data.name}
                     placeholder="Name"
+                    status={errors.name ? "error" : ""}
                   />
+                  {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   Contact*
@@ -244,7 +273,9 @@ function Clients() {
                     onChange={handleChange}
                     value={data.contact}
                     placeholder="Contact"
+                    status={errors.contact ? "error" : ""}
                   />
+                  {errors.contact && <div style={{ color: "red" }}>{errors.contact}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   Address*
@@ -253,7 +284,9 @@ function Clients() {
                     onChange={handleChange}
                     value={data.address}
                     placeholder="Address"
+                    status={errors.address ? "error" : ""}
                   />
+                  {errors.address && <div style={{ color: "red" }}>{errors.address}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   State*<br />
@@ -268,6 +301,7 @@ function Clients() {
                     }
                     onChange={(value) => setData({ ...data, stateid: value })}
                   />
+                  {errors.stateid && <div style={{ color: "red" }}>{errors.stateid}</div>}
                 </div>
                 <div className="col-lg-6 p-1">
                   GST No
@@ -276,7 +310,9 @@ function Clients() {
                     onChange={handleChange}
                     value={data.gstno}
                     placeholder="GST No"
+                    status={errors.gstno ? "error" : ""}
                   />
+                  {errors.gstno && <div style={{ color: "red" }}>{errors.gstno}</div>}
                 </div>
                 <div className="col-lg-12 p-1">
                   <Button onClick={handleSave} type="primary">

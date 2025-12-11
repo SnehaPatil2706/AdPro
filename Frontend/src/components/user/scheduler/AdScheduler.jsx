@@ -607,7 +607,9 @@ function AdScheduler() {
                                         setShowModal(false)
                                         setIsEditMode(false)
                                     }} disabled={loading}>Cancel</button>
-                                    <button className="btn btn-primary" onClick={handleSaveAd}>
+                                    <button className="btn btn-primary" 
+                                    onClick={handleSaveAd}
+                                    disabled={loading || !selectedDate || !selectedClient || !selectedPaper || !adDescription}>
                                         {loading ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update' : 'Save')}
                                     </button>
                                 </div>
